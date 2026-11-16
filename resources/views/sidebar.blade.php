@@ -1,14 +1,13 @@
 @php
-    use SolutionForest\DrilldownNav\DrilldownNavPlugin;
     use SolutionForest\DrilldownNav\Tree\ActivePathResolver;
 
-    $panel = filament()->getCurrentPanel();
+    /** @var \SolutionForest\DrilldownNav\DrilldownNavPlugin $plugin */
     $resolver = new ActivePathResolver;
-    $tree = DrilldownNavPlugin::get()->getTree();
-    $homeUrl = url($panel->getPath());
-    $resolved = $resolver->resolve($tree, '/' . \Filament\Support\original_request()->path(), '/' . $panel->getPath());
+    $tree = $plugin->getTree();
+    $homeUrl = $plugin->getRootUrl();
+    $resolved = $resolver->resolve($tree, $plugin->getRequestPath(), ActivePathResolver::normalise($homeUrl));
     $level = $resolver->level($tree, $resolved, $homeUrl);
-    $spa = $panel->hasSpaMode();
+    $spa = filament()->getCurrentOrDefaultPanel()?->hasSpaMode() ?? false;
 @endphp
 
 <nav
@@ -22,6 +21,7 @@
         },
     }"
     class="fi-drilldown-nav"
+    aria-label="{{ __('filament-drilldown-nav::messages.navigation') }}"
     data-depth="{{ $level['depth'] }}"
 >
     @if ($level['parent'])
@@ -32,7 +32,7 @@
                 class="fi-drilldown-back"
             >
                 <x-filament::icon icon="heroicon-m-chevron-left" style="width:1.25rem;height:1.25rem" />
-                {{ __('Back') }}
+                {{ __('filament-drilldown-nav::messages.back') }}
             </a>
             <div class="fi-drilldown-title">{{ $level['title'] ?? $level['parent']->getLabel() }}</div>
         </div>

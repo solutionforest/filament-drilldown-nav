@@ -141,6 +141,17 @@ NavItem::make('Inbox')->badge(fn () => (string) Message::unread()->count(), 'dan
 
 Empty groups disappear. Closures run once per request, and only for items on the current path.
 
+## Multi-panel, Octane, tenants, languages
+
+- **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
+- **Octane / long-lived workers:** safe. Request-specific state (item tree, children, record lookups) lives in a request-scoped binding that is discarded after each request. Pass a **closure** to `items()` so menus can depend on the user, tenant or database; static `NavItem`s built once are fine for static menus. Verified with simulated worker reuse in the tests and with a real RoadRunner worker (see Quality).
+- **Tenancy and domains:** Home and Back use `Panel::getUrl($tenant)`, so `https://app.test/admin/{tenant}` and panels on their own domain work. (Demo: `workspace` panel with tenancy on `workspace.localhost`.)
+- **Languages:** "Back" and the navigation landmark are translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어 and Español. Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left layouts are not mirrored yet.
+
+| Japanese UI | Second panel with its own tree |
+|---|---|
+| ![ja](docs/screenshots/11-japanese.png) | ![portal](docs/screenshots/12-portal-panel.png) |
+
 ## Demo app
 
 `demo/` is a Laravel 13 + Filament v5 app wired to the package via a path repository. It is deliberately more than a toy:
@@ -191,6 +202,8 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 - **Pest** (package): URL matching, level selection, groups, per-record menus, nested sub menus, once-per-request evaluation, ignored keys, failing lookups.
 - **Demo feature tests**: each level, record menus, nested resources, native navigation import, badges, permissions, no duplicates.
 - **PHPStan level 9** on `src/`, with no ignores.
+- **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. A real RoadRunner/Octane worker (one worker, three rounds of alternating users and panels, a record changed in the database between requests) was also checked by hand; that run is not part of CI.
+- **Languages:** every shipped language is tested for rendering and for having the same keys.
 - CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
 
 ## Documentation

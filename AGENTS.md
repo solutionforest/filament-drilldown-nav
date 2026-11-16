@@ -40,7 +40,15 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
 - Closures given to `children()`, `record()` or `items()` must run **at most once per request** and only for items on the current path. Do not add code that walks the whole tree eagerly.
 - Do not use `navigation(false)` on the panel: it removes the whole sidebar, so the render hook never fires. The plugin empties the list with a `NavigationBuilder` instead.
 - Style: Laravel Pint, `declare(strict_types=1)`, Filament conventions. Conventional Commit messages.
-- Do not commit `.env`, `vendor/`, or `demo/database/database.sqlite`.
+- Do not commit `.env`, `vendor/`, `demo/database/database.sqlite`, or the RoadRunner binary `demo/rr`.
+
+## Long-lived workers (Octane): where state may live
+
+- **Never store request-specific state on the plugin, on `NavItem`, or in static properties.** Panels, plugins and any `NavItem` built outside a closure live for the whole worker. Use `RequestState::current()->remember($owner, $key, fn)` (a *scoped* binding, discarded after each request) as `NavItem`, the plugin and `NativeNavigation` do.
+- The sidebar hook is registered with `$panel->renderHook()` (panel-scoped) **and** guarded to render only for the panel being shown: Filament boots the default panel's hooks even while another panel is served.
+- Build panel/tenant URLs through Filament (`Panel::getUrl($tenant)`), never from `$panel->getPath()` alone.
+- Tests that simulate a worker must do what Octane does between requests: `$app->forgetScopedInstances()` **and** `Facade::clearResolvedInstances()` (see `demo/tests/Feature/PhaseATest.php`). Forgetting the second one makes Filament's facade keep the previous request's manager and produces misleading failures.
+- New user-visible strings go in `resources/lang/*/messages.php` for **all** shipped languages (a test checks the keys match).
 
 ## Gotchas learned the hard way
 

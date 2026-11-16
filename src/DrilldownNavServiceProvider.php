@@ -13,6 +13,6 @@ class DrilldownNavServiceProvider extends PackageServiceProvider
 
     public function configurePackage(Package $package): void
     {
-        $package->name(static::$name)->hasViews(static::$name);
+        $package->name(static::$name)->hasViews(static::$name)->hasTranslations();
     }
 }
