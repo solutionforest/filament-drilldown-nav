@@ -96,7 +96,7 @@ class ActivePathResolver
 
                 return [
                     'parent' => $path[$i],
-                    'title' => (string) $path[$i]->getLabel(),
+                    'title' => $path[$i]->getLabelText(),
                     'items' => $path[$i]->getChildren(),
                     'depth' => $i + 1,
                     'back' => $grand?->getLinkUrl() ?? $homeUrl,

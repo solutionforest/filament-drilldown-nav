@@ -1,20 +1,37 @@
 # Filament Drilldown Nav
 
-Drill-down (slide) multi-level sidebar navigation for **Filament v5**.
+Drill-down sidebar navigation for **Filament v5**: one left sidebar, **one level at a time**, a **Back** link, any depth — and a **menu per record** (click an agent, get that agent's own menu).
 
-One left sidebar shows **one level at a time**. Clicking an item that has children replaces the list with that item's own menu, with a **Back** link and the section title. Works at any depth, including **inside a single record**: click an agent in a table and the sidebar becomes that agent's own menu (Playground, Knowledge → Documents / Websites, Settings → General / Advanced).
+![Journey: main menu, agents table, one agent, knowledge sub menu](docs/screenshots/00-journey.png)
 
-> **Status: early.** Checked in a real browser in the demo app: levels, record menus with sub menus, light and dark mode, the mobile drawer, and SPA mode (`->spa()`). Not done yet: collapsed (icon-only) sidebar behaviour.
+## Why
 
-| Main menu | Agents (a normal Filament table) |
-|---|---|
-| ![main menu](docs/screenshots/01-root.png) | ![agents list](docs/screenshots/02-agents-list.png) |
-| **Click an agent → its own menu** | **Knowledge → sub menu (nested resource)** |
-| ![agent menu](docs/screenshots/03-agent-menu.png) | ![knowledge sub menu](docs/screenshots/04-knowledge-sub-menu.png) |
-| **Settings group → sub menu** | **Static tree, level 4** |
-| ![settings sub menu](docs/screenshots/05-settings-sub-menu.png) | ![level 4](docs/screenshots/06-docs-level-4.png) |
-| **Dark mode** | **Mobile drawer** |
-| ![dark mode](docs/screenshots/07-dark.png) | ![mobile drawer](docs/screenshots/08-mobile-drawer.png) |
+Filament's sidebar nests everything in place, and a cluster's or page's sub-navigation appears as a *second* menu beside the content. That is fine for two levels. It gets awkward when a record has its own area with its own sub menus (3–4 levels) and you want it all in **one** place.
+
+| You want | Filament alone | This plugin |
+|---|---|---|
+| A menu for one record (agent, site, customer …) | build a sub-navigation per page | `->record(fn ($record) => [...])` |
+| 3–4 levels in the left sidebar | groups + one parent level | any depth |
+| One menu location | sidebar **and** sub-navigation | the sidebar |
+| Keep `$navigationGroup`, `$navigationParentItem`, badges, `canAccess()` | — | `NavItem::fromFilamentNavigation()` |
+
+> If two levels are enough for you, Filament's native groups, parent items and Clusters are simpler. Use this plugin when you need more depth or a menu per record.
+
+## How it works (short)
+
+The level you see is computed **on the server from the URL, on every request**: no JavaScript state, so refreshes and shared links land in the right place.
+
+```mermaid
+flowchart LR
+    A["Request URL"] --> B["Match item URLs<br/>(longest prefix wins)"]
+    B --> C{"Record key in URL?"}
+    C -- "yes" --> D["Resolve the record,<br/>add its menu as one more level"]
+    C -- "no" --> E
+    D --> E["Deepest item that has children"]
+    E --> F["Sidebar: Back + title + its children"]
+```
+
+Full explanation with more diagrams (level selection, per-record sequence, native navigation reuse, class overview): **[docs/how-it-works.md](docs/how-it-works.md)**.
 
 ## Requirements
 
@@ -22,29 +39,49 @@ PHP 8.3+, Laravel 13, Filament v5.
 
 ## Install
 
-Not on Packagist yet. Add the repository to your app's `composer.json`, then require it:
+Not on Packagist yet:
 
 ```bash
 composer config repositories.drilldown vcs https://github.com/solutionforest/filament-drilldown-nav
 composer require solutionforest/filament-drilldown-nav:dev-main
 ```
 
-## Tutorial
-
-### 1. Register the plugin on your panel
+## Quick start
 
 ```php
 use SolutionForest\DrilldownNav\DrilldownNavPlugin;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
 $panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
-    NavItem::page(Dashboard::class),                 // label, icon, URL, access from the page class
-    NavItem::resource(AgentResource::class),         // label, icon, list URL, access from the resource
-    NavItem::make('Reports')->icon('heroicon-o-chart-bar')->url('/admin/reports'), // any URL, e.g. a React page
+    NavItem::page(Dashboard::class),                       // label, icon, URL, access from the class
+
+    NavItem::resource(AgentResource::class)                // list = a normal Filament table
+        ->record(fn (Agent $agent) => [                    // menu shown INSIDE one agent
+            NavItem::make('Overview')->icon('heroicon-o-eye')
+                ->url(AgentResource::getUrl('view', ['record' => $agent])),
+            NavItem::make('Playground')->icon('heroicon-o-chat-bubble-left-right')
+                ->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'playground'])),
+            NavItem::make('Knowledge')->icon('heroicon-o-book-open')->children([   // a sub menu
+                NavItem::resource(DocumentResource::class, ['agent' => $agent]),   // nested resource
+                NavItem::make('Websites')->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'websites'])),
+            ]),
+        ]),
+
+    ...NavItem::fromFilamentNavigation(),                  // everything else Filament would show
 ]));
 ```
 
-The plugin empties Filament's native navigation (keeping the sidebar shell, topbar and mobile drawer) and renders the drill-down menu instead. **Items you don't list are not shown**, so list every Resource/Page you want in the menu.
+The plugin empties Filament's own list (keeping the sidebar shell, topbar and mobile drawer): **only items returned from `items()` are shown.**
+
+## Tutorial
+
+### 1. Pages, resources and plain URLs
+
+```php
+NavItem::page(Dashboard::class);                 // Filament Page
+NavItem::resource(SiteResource::class);          // Filament Resource (list URL)
+NavItem::make('Reports')->icon('heroicon-o-chart-bar')->url('/admin/reports')->badge('3', 'danger'); // any URL, e.g. a React page
+```
 
 ### 2. Nested levels
 
@@ -56,62 +93,115 @@ NavItem::make('Docs')->url('/admin/docs')->children([
 ]);
 ```
 
-An item with children opens its own level when you visit its URL. An item **without a URL** is a pure group: clicking it goes to its first child, and Back from a level under it returns to that group's level.
+An item with children opens its own level when you visit its URL. An item **without a URL** is a pure group: clicking it goes to its first child.
 
-### 3. A menu per record ("click an agent, get that agent's menu")
+| Level 4 | Reports (native group, badge) |
+|---|---|
+| ![level 4](docs/screenshots/08-docs-level-4.png) | ![reports](docs/screenshots/06-reports-native.png) |
+
+### 3. A menu per record
+
+`record()` is the feature this plugin exists for. When the URL is `<list URL>/<key>/…` (and the key is not `create`), the key is resolved with the resource's own route binding and the sidebar shows your menu, titled with the record's title. Back returns to the list.
 
 ```php
-NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [
-    NavItem::make('Overview')->url(AgentResource::getUrl('view', ['record' => $agent])),
-    NavItem::make('Playground')->url(AgentResource::getUrl('playground', ['record' => $agent])),
-    NavItem::make('Knowledge')->children([                                   // sub menu
-        NavItem::resource(DocumentResource::class, ['agent' => $agent]),    // nested resource
-        NavItem::make('Websites')->url(AgentResource::getUrl('websites', ['record' => $agent])),
-    ]),
-    NavItem::make('Settings')->children([
-        NavItem::make('General')->url(AgentResource::getUrl('edit', ['record' => $agent])),
-        NavItem::make('Advanced')->url(...),
-    ]),
-]);
+NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [ /* any NavItems, any depth */ ]);
 ```
 
-When the URL is `<resource list URL>/<key>/…`, the key is resolved to a record with the resource's own route binding, and the record becomes one more level of the tree: its title is the section title, its menu the items, and Back returns to the list. Record menu items work like any other item: `children()` opens a sub menu, a URL-less item is a group, and you can nest as deep as you need.
+| One agent's menu | Sub menu inside it |
+|---|---|
+| ![agent menu](docs/screenshots/03-agent-menu.png) | ![knowledge sub menu](docs/screenshots/04-knowledge-sub-menu.png) |
 
-Rules worth knowing:
+Record-menu URLs must live under the resource's own URL (`/admin/agents/{record}/…`), because that is how the plugin knows you are inside the record. Register extra pages on the resource, **after** `edit`:
 
-- **Every page of a record must live under `<list URL>/<key>/…`** (e.g. `/admin/agents/7/…`); that is how the plugin knows you are inside the record. Custom resource pages (`'playground' => AgentPlayground::route('/{record}/playground')`) and nested resources (`$parentResource = AgentResource::class`) both do this.
-- An item whose URL is the record's own URL (the "Overview" above) is highlighted on that exact page only, not on every page below it.
-- `create`, and fixed list-level pages registered on the resource (e.g. `/admin/agents/import`), are never treated as record keys. Add more with `->ignoreRecordKeys(['create', 'import'])`. A key that fails to load (e.g. a database error for `abc` on an integer column) is treated as "not a record".
-- `NavItem::resource()` takes URL parameters for nested resources: `NavItem::resource(DocumentResource::class, ['agent' => $agent])`.
-- For a non-resource item, use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`.
+```php
+'edit' => EditAgent::route('/{record}/edit'),
+'section' => AgentSection::route('/{record}/{section}'),
+```
 
-### How the current level is chosen
+For a non-resource item use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`. Fixed pages below the list URL (like `/agents/import`) are never mistaken for a record: they are excluded automatically for `resource()`, or with `->ignoreRecordKeys(['create', 'import'])`.
 
-On every request the plugin matches the request path against item URLs (path part only; **longest prefix wins**, the deeper item on a tie; the panel root URL, and an item with the same URL as its parent, match exactly only) and renders the children of the deepest matching item that has children. Unknown URLs show the top level with nothing highlighted. This is resolved on the server from the page URL (also when Filament re-renders the sidebar over Livewire), so deep links, refreshes and SPA navigation land on the right level. `children()`/`->record()` closures and record lookups run at most once per request, and only for items on the current path.
+### 4. Reuse Filament's own navigation
+
+Anything you already declare the Filament way keeps working (`$navigationGroup`, `$navigationParentItem`, `$navigationSort`, `$navigationBadge`, `shouldRegisterNavigation()`, `canAccess()`, `NavigationItem::make()`):
+
+```php
+...NavItem::fromFilamentNavigation(
+    fn (NavigationItem $item): bool => $item->getUrl() !== Dashboard::getUrl() // leave out what you list by hand
+)
+```
+
+Groups become URL-less groups (with the group icon you registered on the panel), parent items become sub levels, badges and access checks carry over. See the *Reports* group in the demo.
+
+### 5. Visibility and badges
+
+```php
+NavItem::make('Billing')->visible(fn () => auth()->user()->isAdmin());
+NavItem::make('Inbox')->badge(fn () => (string) Message::unread()->count(), 'danger');
+```
+
+Empty groups disappear. Closures run once per request, and only for items on the current path.
 
 ## Demo app
 
-`demo/` is a Laravel 13 + Filament v5 app wired to the package via a path repository (an `Agent` resource whose records have their own menu with sub menus, a nested `Document` resource, a 4-level Docs tree, and a pure group).
+`demo/` is a Laravel 13 + Filament v5 app wired to the package via a path repository. It is deliberately more than a toy:
+
+| Area | What it shows |
+|---|---|
+| **Agents** (Resource) | a table; click a row → that agent's own menu (Overview, Playground, Knowledge, Settings) |
+| Knowledge → Documents | a **nested resource** scoped to the agent (own table, create, edit) |
+| Settings | a group with sub menus inside a record menu |
+| **Reports** | a group imported from **native Filament navigation**: sort order, group icon, badge, a native *parent item* (Usage → By agent) and a permission-gated page (Billing) |
+| **Docs** | a static 4-level tree (custom pages / React pages are just URLs) |
+| **Settings** | a pure group (no URL of its own) |
 
 ```bash
 cd demo
 composer install
 cp .env.example .env && php artisan key:generate
 touch database/database.sqlite && php artisan migrate --seed
-php artisan serve            # DEMO_SPA=true php artisan serve to try SPA mode
+php artisan serve
 ```
 
 Log in at `/admin/login` with `demo@example.com` / `password` (local demo data only).
 
-## Tests & CI
+<details>
+<summary>More screenshots</summary>
+
+| Agents table | Nested resource inside an agent |
+|---|---|
+| ![agents](docs/screenshots/02-agents-list.png) | ![document edit](docs/screenshots/05-document-edit.png) |
+
+| Native parent item (Usage → By agent) | Dark mode |
+|---|---|
+| ![by agent](docs/screenshots/07-reports-parent-item.png) | ![dark](docs/screenshots/09-dark-mode.png) |
+
+| Mobile drawer |
+|---|
+| ![mobile](docs/screenshots/10-mobile-drawer.png) |
+
+</details>
+
+## Quality
 
 ```bash
-vendor/bin/pest                 # package: path resolution, levels, groups, record menus
-vendor/bin/pint --test          # code style
-cd demo && php artisan test     # demo: renders each level through the real panel
+composer check                  # Pint + PHPStan (level 9, no baseline) + Pest
+cd demo && php artisan test     # feature tests: real pages rendered through the panel
 ```
 
-GitHub Actions (`.github/workflows/tests.yml`) runs all of the above on a **self-hosted** runner (needs PHP 8.3+ and Composer). Fork pull requests are skipped so untrusted code never runs on the runner.
+- **Pest** (package): URL matching, level selection, groups, per-record menus, nested sub menus, once-per-request evaluation, ignored keys, failing lookups.
+- **Demo feature tests**: each level, record menus, nested resources, native navigation import, badges, permissions, no duplicates.
+- **PHPStan level 9** on `src/`, with no ignores.
+- CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
+
+## Documentation
+
+- [How it works](docs/how-it-works.md) — problem, request flow, record menus, native navigation, class overview.
+- [AGENTS.md](AGENTS.md) — for people and AI agents changing this repo.
+- [SKILLS.md](SKILLS.md) — for AI agents adding the plugin to a Filament app.
+
+## Limits
+
+Collapsed (icon-only) sidebar mode is not specially handled yet. The plugin owns the sidebar list, so items you do not list (or import) are not shown.
 
 ## License
 

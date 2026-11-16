@@ -10,6 +10,8 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -40,6 +42,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->navigationGroups([
+                NavigationGroup::make('Reports')->icon('heroicon-o-chart-pie'),
+            ])
             ->plugin(DrilldownNavPlugin::make()->items(fn () => [
                 NavItem::page(Dashboard::class),
 
@@ -61,6 +66,14 @@ class AdminPanelProvider extends PanelProvider
                         NavItem::make('Advanced')->url(AgentResource::getUrl('settings', ['record' => $agent, 'section' => 'advanced'])),
                     ]),
                 ]),
+
+                // Reuse Filament's own navigation: pages/resources that set $navigationGroup,
+                // $navigationParentItem, badges or canAccess() show up here without being
+                // listed again (the Reports group). Items handled by hand above are filtered out.
+                ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => ! in_array($item->getUrl(), [
+                    Dashboard::getUrl(),
+                    AgentResource::getUrl('index'),
+                ], true)),
 
                 // Static 4-level tree (custom pages / React pages are just URLs).
                 NavItem::make('Docs')->icon('heroicon-o-book-open')->url('/admin/demo/docs')->children([

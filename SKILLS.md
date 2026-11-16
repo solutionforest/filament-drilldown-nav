@@ -1,0 +1,87 @@
+---
+name: filament-drilldown-nav
+description: Add drill-down sidebar navigation to a Filament v5 panel — one level at a time, Back link, any depth, per-record menus (click an agent/site/customer and get that record's own menu), reusing existing Resources and Pages. Use when a Filament panel needs 3+ navigation levels, a menu per record, or a single left sidebar instead of a second sub-navigation.
+---
+
+# Skill: filament-drilldown-nav
+
+Package: `solutionforest/filament-drilldown-nav` (Filament **v5**, PHP 8.3+). For repo maintenance see [`AGENTS.md`](AGENTS.md); for diagrams see [`docs/how-it-works.md`](docs/how-it-works.md).
+
+## When to use it
+
+- A record has its own area ("click an agent → Playground, Knowledge, Settings") and you want that menu **in the left sidebar**.
+- Menus nest 3–4 levels deep.
+- You do **not** need it for two levels: native navigation groups, parent items and Clusters are enough.
+
+## Install and register
+
+```bash
+composer config repositories.drilldown vcs https://github.com/solutionforest/filament-drilldown-nav
+composer require solutionforest/filament-drilldown-nav:dev-main
+```
+
+```php
+use SolutionForest\DrilldownNav\DrilldownNavPlugin;
+use SolutionForest\DrilldownNav\Tree\NavItem;
+
+$panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
+    NavItem::page(Dashboard::class),
+    NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [ /* record menu */ ]),
+    ...NavItem::fromFilamentNavigation(),   // everything else Filament would show
+]));
+```
+
+The plugin empties Filament's own list: **only items returned from `items()` are shown.**
+
+## Recipes
+
+**Page / Resource (label, icon, URL, access come from the class)**
+```php
+NavItem::page(Dashboard::class);
+NavItem::resource(SiteResource::class);
+```
+
+**Any URL (custom page, React/Inertia page)**
+```php
+NavItem::make('Reports')->icon('heroicon-o-chart-bar')->url('/admin/reports')->badge('3', 'danger');
+```
+
+**Nested levels** — an item with children opens its own level. No URL = pure group (links to its first child).
+```php
+NavItem::make('Docs')->url('/admin/docs')->children([
+    NavItem::make('Guides')->url('/admin/docs/guides')->children([
+        NavItem::make('Install')->url('/admin/docs/guides/install'),
+    ]),
+]);
+```
+
+**Menu per record** — the URL segment after the resource URL is the record key.
+```php
+NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [
+    NavItem::make('Overview')->url(AgentResource::getUrl('view', ['record' => $agent])),
+    NavItem::make('Knowledge')->children([
+        NavItem::resource(DocumentResource::class, ['agent' => $agent]), // nested resource
+        NavItem::make('Websites')->url(...),
+    ]),
+]);
+```
+For a non-resource item use `->resolveRecordUsing(fn (string $key) => ...)` and `->recordTitleUsing(fn ($record) => ...)`. Fixed pages under the list URL (like `import`) are excluded with `->ignoreRecordKeys(['create', 'import'])` (done automatically for `resource()`).
+
+**Reuse Filament's own navigation** (`$navigationGroup`, `$navigationParentItem`, `$navigationSort`, badges, `canAccess()`):
+```php
+...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => $item->getUrl() !== Dashboard::getUrl())
+```
+
+## Rules of thumb
+
+- **Record menu URLs must live under the resource's URL** (`/admin/agents/{record}/...`). Register extra pages on the resource (`'section' => AgentSection::route('/{record}/{section}')`, after `edit`) and link to them with `Resource::getUrl()`.
+- The sidebar level is computed from the **request URL** on every request: no JS state, so refresh and deep links work.
+- Keep closures cheap: they run once per request, only for items on the current path.
+- Hide items with `->visible(fn () => ...)` or the page/resource's own `canAccess()`; empty groups disappear.
+
+## Verify
+
+1. Open a record URL: the sidebar shows the record title, its menu and a Back link to the list.
+2. Open `create` and the list: you are back on the top level.
+3. Open a sub menu item: the sub level shows with the right item highlighted.
+4. In tests, assert on the rendered sidebar text (strip tags from the `.fi-drilldown-nav` element), as in `demo/tests/Feature/NativeNavigationTest.php`.
