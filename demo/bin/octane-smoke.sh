@@ -18,9 +18,27 @@ php artisan key:generate --force >/dev/null
 touch database/database.sqlite
 php artisan migrate:fresh --seed --force >/dev/null
 
+# Server binaries are cached outside the repo so a CI runner downloads each one once. Downloads avoid
+# the unauthenticated GitHub API (rate-limited per IP): RoadRunner's installer uses $GITHUB_TOKEN when
+# set, and FrankenPHP is fetched from its public release URL.
+CACHE="${OCTANE_BIN_CACHE:-$HOME/.cache/octane-smoke}"
+mkdir -p "$CACHE"
+
 case "$SERVER" in
-  roadrunner) [ -x ./rr ] || php artisan octane:install --server=roadrunner --no-interaction >/dev/null 2>&1 ;;
-  frankenphp) [ -x ./frankenphp ] || php artisan octane:install --server=frankenphp --no-interaction >/dev/null 2>&1 ;;
+  roadrunner)
+    if [ ! -x ./rr ]; then
+      if [ -x "$CACHE/rr" ]; then cp "$CACHE/rr" ./rr
+      else php artisan octane:install --server=roadrunner --no-interaction >/dev/null 2>&1 && cp ./rr "$CACHE/rr"; fi
+    fi
+    [ -x ./rr ] || { echo "Could not obtain the RoadRunner binary"; exit 4; } ;;
+  frankenphp)
+    if [ ! -x ./frankenphp ]; then
+      if [ ! -x "$CACHE/frankenphp" ]; then
+        curl -fsSL -o "$CACHE/frankenphp" "https://github.com/php/frankenphp/releases/latest/download/frankenphp-linux-x86_64" && chmod +x "$CACHE/frankenphp"
+      fi
+      [ -x "$CACHE/frankenphp" ] && cp "$CACHE/frankenphp" ./frankenphp
+    fi
+    [ -x ./frankenphp ] || { echo "Could not obtain the FrankenPHP binary"; exit 4; } ;;
 esac
 
 LOG="$(mktemp)"

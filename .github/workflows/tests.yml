@@ -54,4 +54,6 @@ jobs:
         run: composer install --no-interaction --prefer-dist
       - name: Smoke test against a real one-worker Octane server
         working-directory: demo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bin/octane-smoke.sh ${{ matrix.server }}
