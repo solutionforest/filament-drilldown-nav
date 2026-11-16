@@ -10,11 +10,13 @@ use Filament\Navigation\NavigationBuilder;
 use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use SolutionForest\DrilldownNav\Tree\NavNode;
+use SolutionForest\DrilldownNav\Tree\NavItem;
 
 class DrilldownNavPlugin implements Plugin
 {
     protected array|Closure $tree = [];
+
+    protected ?array $resolvedTree = null;
 
     public static function make(): static
     {
@@ -32,18 +34,19 @@ class DrilldownNavPlugin implements Plugin
         return 'drilldown-nav';
     }
 
-    /** @param array<int, NavNode>|Closure $tree */
-    public function tree(array|Closure $tree): static
+    /** @param array<int, NavItem>|Closure $items */
+    public function items(array|Closure $items): static
     {
-        $this->tree = $tree;
+        $this->tree = $items;
+        $this->resolvedTree = null;
 
         return $this;
     }
 
-    /** @return array<int, NavNode> */
+    /** @return array<int, NavItem> evaluated once per request */
     public function getTree(): array
     {
-        return $this->tree instanceof Closure ? ($this->tree)() : $this->tree;
+        return $this->resolvedTree ??= $this->tree instanceof Closure ? ($this->tree)() : $this->tree;
     }
 
     public function register(Panel $panel): void

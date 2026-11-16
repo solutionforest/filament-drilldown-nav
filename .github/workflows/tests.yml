@@ -8,6 +8,8 @@ on:
 jobs:
   package:
     name: Package (Pest + Pint)
+    # Self-hosted runner: never run code from fork pull requests.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +19,8 @@ jobs:
 
   demo:
     name: Demo app (Laravel 13 + Filament v5)
+    # Self-hosted runner: never run code from fork pull requests.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4

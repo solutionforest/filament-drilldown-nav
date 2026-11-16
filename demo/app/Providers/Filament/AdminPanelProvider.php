@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DemoPage;
+use App\Filament\Resources\Sites\SiteResource;
+use App\Models\Site;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -20,7 +22,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use SolutionForest\DrilldownNav\DrilldownNavPlugin;
-use SolutionForest\DrilldownNav\Tree\NavNode;
+use SolutionForest\DrilldownNav\Tree\NavItem;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -36,19 +38,33 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->plugin(DrilldownNavPlugin::make()->tree(fn () => [
-                NavNode::make('dashboard', 'Dashboard')->icon('heroicon-o-home')->url('/admin'),
-                NavNode::make('sites', 'Sites')->icon('heroicon-o-globe-alt')->url('/admin/demo/sites')->children([
-                    NavNode::make('acme', 'Acme Corp')->icon('heroicon-o-building-office')->url('/admin/demo/sites/acme')->children([
-                        NavNode::make('pages', 'Pages')->icon('heroicon-o-document-text')->url('/admin/demo/sites/acme/pages')->children([
-                            NavNode::make('home', 'Home page')->url('/admin/demo/sites/acme/pages/home'),
-                            NavNode::make('about', 'About page')->url('/admin/demo/sites/acme/pages/about'),
-                        ]),
-                        NavNode::make('media', 'Media')->icon('heroicon-o-photo')->url('/admin/demo/sites/acme/media'),
-                    ]),
-                    NavNode::make('globex', 'Globex')->icon('heroicon-o-building-office')->url('/admin/demo/sites/globex'),
+            ->plugin(DrilldownNavPlugin::make()->items(fn () => [
+                NavItem::page(Dashboard::class),
+
+                // A Filament Resource. Inside one Site, the sidebar shows that Site's own menu.
+                NavItem::resource(SiteResource::class)->record(fn (Site $site) => [
+                    NavItem::make('Overview')->icon('heroicon-o-eye')->url(SiteResource::getUrl('view', ['record' => $site])),
+                    NavItem::make('Pages')->icon('heroicon-o-document-text')->url(SiteResource::getUrl('section', ['record' => $site, 'section' => 'pages'])),
+                    NavItem::make('Media')->icon('heroicon-o-photo')->url(SiteResource::getUrl('section', ['record' => $site, 'section' => 'media'])),
+                    NavItem::make('Edit')->icon('heroicon-o-pencil-square')->url(SiteResource::getUrl('edit', ['record' => $site])),
                 ]),
-                NavNode::make('settings', 'Settings')->icon('heroicon-o-cog-6-tooth')->url('/admin/demo/settings'),
+
+                // Static 4-level tree (custom pages / React pages are just URLs).
+                NavItem::make('Docs')->icon('heroicon-o-book-open')->url('/admin/demo/docs')->children([
+                    NavItem::make('Guides')->url('/admin/demo/docs/guides')->children([
+                        NavItem::make('Getting started')->url('/admin/demo/docs/guides/start')->children([
+                            NavItem::make('Install')->url('/admin/demo/docs/guides/start/install'),
+                            NavItem::make('Configure')->url('/admin/demo/docs/guides/start/configure'),
+                        ]),
+                    ]),
+                    NavItem::make('API')->url('/admin/demo/docs/api'),
+                ]),
+
+                // A pure group: no URL of its own, clicking it opens its first child.
+                NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
+                    NavItem::make('General')->url('/admin/demo/settings/general'),
+                    NavItem::make('Team')->url('/admin/demo/settings/team'),
+                ]),
             ]))
             ->pages([
                 Dashboard::class,
