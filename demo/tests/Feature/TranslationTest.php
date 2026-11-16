@@ -33,7 +33,7 @@ class TranslationTest extends TestCase
 
         $response->assertOk();
         $html = (string) $response->getContent();
-        $this->assertMatchesRegularExpression('#class="fi-drilldown-back"[^>]*>.*?'.preg_quote($back, '#').'\s*</a>#su', $html);
+        $this->assertMatchesRegularExpression('#class="fi-drilldown-back"[^>]*>.*?'.preg_quote($back, '#').'\s*(?:</span>)?\s*</a>#su', $html);
         $this->assertStringContainsString('aria-label="'.$landmark.'"', $html);
     }
 

@@ -112,7 +112,23 @@ flowchart LR
 
 Why it is done this way: Resources and Pages only register their navigation items while Filament is *building* its sidebar. The plugin's navigation builder (which keeps the sidebar shell alive while emptying the default list) therefore captures the items at that moment, using Filament's public `NavigationManager` API. Use the optional `$filter` to drop items you list by hand.
 
-## 5. Several panels, long-lived workers, tenants
+## 5. Two ways to show children
+
+```mermaid
+flowchart TD
+    I["Item with children"] --> Q{"Inline?<br/>(item flag, else plugin default)"}
+    Q -- "no: drilldown (default)" --> D["Opens its own level<br/>Back + title, children replace the list"]
+    Q -- "yes: ->inline()" --> E["Children expand under the item<br/>guide line, chevron, remembered state"]
+    D --> L["level(): deepest item on the path<br/>that OPENS a level"]
+    E --> L2["Stays in its parent's level<br/>(open if the current page is inside)"]
+```
+
+- **Which level is shown** is decided by `opensLevel()`: an item with children that is *not* inline. Inline items never create a level, so a page inside an inline section keeps the sidebar on the level that contains the section, with the section open and the current page marked.
+- **Open or closed:** open when the current page is inside it, otherwise the stored choice (`localStorage`, per item), otherwise `defaultExpanded()`.
+- **Collapsed sidebar** (`sidebarCollapsibleOnDesktop()`): text, titles, headings and badges are bound to Filament's `$store.sidebar.isOpen`, so only icons remain; items reuse Filament's own tooltips; clicking an expandable row opens the sidebar instead of toggling hidden children.
+- **Headings and dividers** are items without URL or children, so they never take part in URL matching.
+
+## 6. Several panels, long-lived workers, tenants
 
 ```mermaid
 flowchart TD
@@ -134,7 +150,7 @@ flowchart TD
 - **Tenants and domains.** Home, Back-to-root and the "exact match" rule use the URL Filament itself builds for the panel (`Panel::getUrl($tenant)`): domain, path and tenant included. The request path includes the application's base path, so sub-directory installs match too.
 - **Languages.** The two strings the plugin owns ("Back" and the landmark label) are translated in English, Simplified/Traditional Chinese (`zh_CN`, `zh_TW`, `zh_HK`), Japanese, Korean and Spanish, and can be overridden by publishing the translations. Your own labels are yours to translate.
 
-## 6. What is in the box
+## 7. What is in the box
 
 ```mermaid
 classDiagram
@@ -171,15 +187,17 @@ classDiagram
 | File | Responsibility |
 |---|---|
 | `src/DrilldownNavPlugin.php` | Registers the plugin: empties Filament's default list (keeps the sidebar shell) and renders ours at `SIDEBAR_NAV_START`. |
-| `src/Tree/NavItem.php` | The menu item: label, icon, URL, badge, visibility, children, per-record menu. |
+| `src/Tree/NavItem.php` | The menu item: label, icon, URL, badge, visibility, children (drilldown or inline), headings, dividers, per-record menu. |
+| `src/ChildDisplay.php` | Enum: `Drilldown` or `Inline` default for a panel. |
 | `src/Tree/ActivePathResolver.php` | Pure logic: request path → active path → level to render. No Filament or HTTP dependencies, so it is easy to test. |
 | `src/RequestState.php` | Per-request memo (scoped binding): item tree, children, record nodes, native capture. |
 | `src/Tree/NativeNavigation.php` | Adapter from Filament's navigation to `NavItem`s. |
 | `resources/views/sidebar.blade.php` | Renders Back, title and items (reusing `x-filament-panels::sidebar.item`), plus the slide animation. |
 
-## 7. Limits
+## 8. Limits
 
-- Collapsed (icon-only) sidebar mode is not specially handled yet.
+- Items without an icon show nothing in the collapsed (icon-only) sidebar: give top-level items an icon.
+- Right-to-left is handled in CSS (mirrored chevrons and animation) but has not been tested with an RTL language.
 - The plugin owns the sidebar list: items you do not list (or import with `fromFilamentNavigation()`) are not shown.
 - Right-to-left languages: strings and `dir` are fine, but the slide animation and chevrons are not mirrored yet.
 - The level is derived from the URL. A record menu therefore needs its URLs to live under the resource's own URL (`/admin/projects/{record}/...`).

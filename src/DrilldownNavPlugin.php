@@ -20,6 +20,8 @@ class DrilldownNavPlugin implements Plugin
     /** @var array<int, NavItem>|Closure(): array<int, NavItem> */
     protected array|Closure $tree = [];
 
+    protected ChildDisplay $childDisplay = ChildDisplay::Drilldown;
+
     protected string $panelId = '';
 
     protected ?Panel $panel = null;
@@ -52,6 +54,22 @@ class DrilldownNavPlugin implements Plugin
         $this->tree = $items;
 
         return $this;
+    }
+
+    /**
+     * Default for items with children: open a new level (drilldown, the default) or expand in place
+     * (inline). Override per item with `->inline()` / `->drilldown()`.
+     */
+    public function childDisplay(ChildDisplay $display): static
+    {
+        $this->childDisplay = $display;
+
+        return $this;
+    }
+
+    public function getChildDisplay(): ChildDisplay
+    {
+        return $this->childDisplay;
     }
 
     /** @return array<int, NavItem> evaluated once per request */

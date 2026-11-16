@@ -141,12 +141,53 @@ NavItem::make('Inbox')->badge(fn () => (string) Message::unread()->count(), 'dan
 
 Empty groups disappear. Closures run once per request, and only for items on the current path.
 
+## Modern navigation: click to expand, lines, icons, sections
+
+Besides drilling into a new level, an item's children can **expand in place**, like a classic tree:
+
+```php
+NavItem::heading('Workspace')->divider(),                       // section heading + a line above it
+
+NavItem::make('Team')->icon('heroicon-o-users')
+    ->inline()                                                  // children expand under the item
+    ->defaultExpanded()                                         // start open (otherwise: closed, remembered)
+    ->children([
+        NavItem::make('Members')->url('/admin/team/members')->badge('8'),
+        NavItem::make('Invitations')->url('/admin/team/invitations')->badge('2', 'warning'),
+    ]),
+
+NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->children([   // nesting works
+    NavItem::make('Overview')->url('/admin/subscription'),
+    NavItem::make('Invoices')->inline()->children([ /* ... */ ]),
+]),
+```
+
+| | |
+|---|---|
+| `->inline()` / `->drilldown()` | per item: expand in place, or open a new level (the default) |
+| `DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)` | change the default for the whole panel (items can still override) |
+| `->defaultExpanded()` | inline items start open; otherwise the open/closed state is remembered per browser |
+| `NavItem::heading('…')`, `->divider()` | non-clickable section headings and separator lines |
+| `->icon()`, `->activeIcon()`, `->badge()` | icons (outline/solid when current) and badges; icon-less nested items get Filament's guide line and dot |
+
+What you get without extra code: the section containing the current page is **open** and its parents marked; guide lines for nested items (Filament's own style); chevrons that rotate; state remembered across page loads; **collapsed (icon-only) sidebar** when the panel uses `->sidebarCollapsibleOnDesktop()` (labels, titles and badges hide, Back keeps its arrow with a tooltip, tooltips on items); keyboard-operable toggle buttons with `aria-expanded`; `aria-current="page"` on the current item; a labelled `nav` landmark; focus moves to the new level's title when you drill in or out; `prefers-reduced-motion` respected; and mirrored chevrons/animation for right-to-left pages (CSS only, not yet tested).
+
+| Expand in place (`->inline()`) | Nested, with guide lines |
+|---|---|
+| ![inline expanded](docs/screenshots/14-inline-expanded.png) | ![nested](docs/screenshots/15-inline-nested.png) |
+
+| Collapsed: top level | Collapsed: inside a project |
+|---|---|
+| ![collapsed root](docs/screenshots/17-collapsed-root.png) | ![collapsed record](docs/screenshots/16-collapsed-record.png) |
+
+> Tip: give top-level items an icon. In the collapsed sidebar, an item without an icon has nothing to show.
+
 ## Multi-panel, Octane, tenants, languages
 
 - **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
 - **Octane / long-lived workers:** safe. Request-specific state (item tree, children, record lookups) lives in a request-scoped binding that is discarded after each request. Pass a **closure** to `items()` so menus can depend on the user, tenant or database; static `NavItem`s built once are fine for static menus. Verified with simulated worker reuse in the tests and with a real RoadRunner worker (see Quality).
 - **Tenancy and domains:** Home and Back use `Panel::getUrl($tenant)`, so `https://app.test/admin/{tenant}` and panels on their own domain work. (Demo: `workspace` panel with tenancy on `workspace.localhost`.)
-- **Languages:** "Back" and the navigation landmark are translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어 and Español. Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left layouts are not mirrored yet.
+- **Languages:** "Back" and the navigation landmark are translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어 and Español. Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left layouts are covered by CSS (mirrored chevrons and animation) but not yet tested with an RTL language.
 
 | Japanese UI | Second panel with its own tree |
 |---|---|
@@ -204,6 +245,7 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 - **PHPStan level 9** on `src/`, with no ignores.
 - **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. A real RoadRunner/Octane worker (one worker, three rounds of alternating users and panels, a record changed in the database between requests) was also checked by hand; that run is not part of CI.
 - **Languages:** every shipped language is tested for rendering and for having the same keys.
+- **Modern navigation:** expand/collapse state, nesting, headings, dividers, chevrons, the collapsed mode and the focus target are tested in the demo and with a real browser (click, keyboard, reload, collapse); the tests were checked by mutation (breaking the feature makes them fail).
 - CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
 
 ## Documentation
@@ -214,7 +256,7 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 
 ## Limits
 
-Collapsed (icon-only) sidebar mode is not specially handled yet. The plugin owns the sidebar list, so items you do not list (or import) are not shown.
+The plugin owns the sidebar list, so items you do not list (or import) are not shown.
 
 ## License
 

@@ -86,12 +86,13 @@ class ActivePathResolver
      * @param  array{path: array<int, NavItem>}  $resolved
      * @return array{parent: ?NavItem, title: ?string, items: array<int, NavItem>, depth: int, back: ?string, active: ?NavItem}
      */
-    public function level(array $tree, array $resolved, ?string $homeUrl = null): array
+    public function level(array $tree, array $resolved, ?string $homeUrl = null, bool $inlineByDefault = false): array
     {
         $path = $resolved['path'];
 
         for ($i = count($path) - 1; $i >= 0; $i--) {
-            if ($path[$i]->hasChildren()) {
+            // Items that expand in place do not open a level of their own.
+            if ($path[$i]->opensLevel($inlineByDefault)) {
                 $grand = $i > 0 ? $path[$i - 1] : null;
 
                 return [

@@ -22,6 +22,17 @@ class NavItem
 
     protected ?string $url = null;
 
+    protected string|BackedEnum|Htmlable|null $activeIcon = null;
+
+    /** null = follow the plugin's default child display */
+    protected ?bool $inline = null;
+
+    protected bool $defaultExpanded = false;
+
+    protected bool $heading = false;
+
+    protected bool $dividerBefore = false;
+
     /** @var string|(Closure(): ?string)|null */
     protected string|Closure|null $badge = null;
 
@@ -57,6 +68,18 @@ class NavItem
     public static function fromFilamentNavigation(?Closure $filter = null): array
     {
         return NativeNavigation::items($filter);
+    }
+
+    /**
+     * A non-clickable section heading ("Manage", "Reports" ...), like Filament's group labels.
+     * Combine with ->divider() for a line above it.
+     */
+    public static function heading(string|Htmlable $label): static
+    {
+        $item = static::make($label);
+        $item->heading = true;
+
+        return $item;
     }
 
     /** A Filament Page: label, icon, URL and access come from the page class. */
@@ -118,6 +141,44 @@ class NavItem
     public function url(?string $url): static
     {
         $this->url = $url;
+
+        return $this;
+    }
+
+    /** Show the children expanded in place under this item (click to expand/collapse) instead of opening a new level. */
+    public function inline(bool $inline = true): static
+    {
+        $this->inline = $inline;
+
+        return $this;
+    }
+
+    /** Open a new level for the children (the default), whatever the plugin's default display is. */
+    public function drilldown(): static
+    {
+        return $this->inline(false);
+    }
+
+    /** For inline items: start expanded even when the current page is not inside it. */
+    public function defaultExpanded(bool $expanded = true): static
+    {
+        $this->defaultExpanded = $expanded;
+
+        return $this;
+    }
+
+    /** Draw a separator line above this item. */
+    public function divider(bool $divider = true): static
+    {
+        $this->dividerBefore = $divider;
+
+        return $this;
+    }
+
+    /** Icon shown while the item is the current page. */
+    public function activeIcon(string|BackedEnum|Htmlable|null $icon): static
+    {
+        $this->activeIcon = $icon;
 
         return $this;
     }
@@ -224,6 +285,38 @@ class NavItem
     public function getIcon(): string|BackedEnum|Htmlable|null
     {
         return $this->icon;
+    }
+
+    public function getActiveIcon(): string|BackedEnum|Htmlable|null
+    {
+        return $this->activeIcon;
+    }
+
+    public function isHeading(): bool
+    {
+        return $this->heading;
+    }
+
+    public function hasDivider(): bool
+    {
+        return $this->dividerBefore;
+    }
+
+    public function isDefaultExpanded(): bool
+    {
+        return $this->defaultExpanded;
+    }
+
+    /** Whether the children are shown in place (true) or as a new level (false). */
+    public function isInline(bool $default = false): bool
+    {
+        return $this->inline ?? $default;
+    }
+
+    /** Opens its own level (has children and is not inline). */
+    public function opensLevel(bool $inlineByDefault = false): bool
+    {
+        return ! $this->isInline($inlineByDefault) && $this->hasChildren();
     }
 
     public function getUrl(): ?string

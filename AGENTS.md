@@ -50,6 +50,13 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
 - Tests that simulate a worker must do what Octane does between requests: `$app->forgetScopedInstances()` **and** `Facade::clearResolvedInstances()` (see `demo/tests/Feature/PhaseATest.php`). Forgetting the second one makes Filament's facade keep the previous request's manager and produces misleading failures.
 - New user-visible strings go in `resources/lang/*/messages.php` for **all** shipped languages (a test checks the keys match).
 
+## Views (Blade) rules
+
+- **Never put `@if`/`@foreach` inside a Blade component tag** (`<x-filament::icon ... @if ... />`): Blade swallows the whole tag silently. Wrap the component in a plain element that carries the directive/`x-show` instead (this once made every chevron disappear while all tests passed).
+- Text, headings and badges that must disappear in the collapsed sidebar get `@if ($collapsible) x-show="$store.sidebar.isOpen" @endif` (on plain elements only).
+- A level is opened only by `opensLevel()`; inline items must never open one.
+- When a UI feature has no assertion that would fail if it broke, add one, and prove it by breaking the feature once (mutation check).
+
 ## Gotchas learned the hard way
 
 - Filament only registers Resource/Page navigation items **while it builds its sidebar**; that is why `NativeNavigation::capture()` runs from the plugin's navigation builder and why it guards against running twice (Filament may resolve the builder several times per build).
