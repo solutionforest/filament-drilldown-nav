@@ -3,10 +3,15 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DemoPage;
+use App\Filament\Resources\Clients\ClientResource;
+use App\Filament\Resources\Clients\Invoices\InvoiceResource;
 use App\Filament\Resources\Projects\Documents\DocumentResource;
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\Projects\Tasks\TaskResource;
 use App\Http\Middleware\SetLocale;
+use App\Models\Client;
 use App\Models\Project;
+use App\Models\Task;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -50,13 +55,44 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(DrilldownNavPlugin::make()->items(fn () => [
                 NavItem::page(Dashboard::class),
 
-                // Projects: a normal Filament table. Click an project and the sidebar shows
-                // that project's own menu; Files and Settings open a sub menu.
+                // Clients (staff only). Click a client: its own menu. "Projects" opens a level listing
+                // that client's projects; "Invoices" is a nested resource with an unpaid-count badge.
+                NavItem::resource(ClientResource::class)->record(fn (Client $client) => [
+                    NavItem::make('Overview')->icon('heroicon-o-eye')
+                        ->url(ClientResource::getUrl('view', ['record' => $client])),
+                    NavItem::make('Projects')->icon('heroicon-o-rectangle-stack')
+                        ->url(ClientResource::getUrl('projects', ['record' => $client]))
+                        ->badge(fn (): string => (string) $client->projects()->count())
+                        ->children(fn (): array => $client->projects()->latest('due_on')->limit(8)->get()
+                            ->map(fn (Project $project): NavItem => NavItem::make($project->name)
+                                ->url(ProjectResource::getUrl('view', ['record' => $project])))
+                            ->all()),
+                    NavItem::resource(InvoiceResource::class, ['client' => $client])
+                        ->icon('heroicon-o-receipt-percent')
+                        ->badge(fn (): string => (string) $client->invoices()->whereIn('status', ['sent', 'overdue'])->count(), 'warning'),
+                    NavItem::make('Contacts')->icon('heroicon-o-users')
+                        ->url(ClientResource::getUrl('section', ['record' => $client, 'section' => 'contacts'])),
+                ]),
+
+                // Projects: a normal Filament table. Click a project: its own menu (5 levels deep:
+                // Projects > Project > Tasks > Task > Comments). Client logins only see their own projects,
+                // and never Time or Settings.
                 NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [
                     NavItem::make('Overview')->icon('heroicon-o-eye')
                         ->url(ProjectResource::getUrl('view', ['record' => $project])),
-                    NavItem::make('Tasks')->icon('heroicon-o-clipboard-document-check')
-                        ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'tasks'])),
+                    NavItem::resource(TaskResource::class, ['project' => $project])
+                        ->badge(fn (): string => (string) $project->tasks()->where('status', '!=', 'done')->count())
+                        ->record(fn (Task $task) => [
+                            NavItem::make('Details')->icon('heroicon-o-document-text')
+                                ->url(TaskResource::getUrl('edit', ['project' => $project, 'record' => $task])),
+                            NavItem::make('Comments')->icon('heroicon-o-chat-bubble-left-right')
+                                ->url(TaskResource::getUrl('section', ['project' => $project, 'record' => $task, 'section' => 'comments'])),
+                            NavItem::make('History')->icon('heroicon-o-clock')
+                                ->url(TaskResource::getUrl('section', ['project' => $project, 'record' => $task, 'section' => 'history'])),
+                        ]),
+                    NavItem::make('Time')->icon('heroicon-o-clock')
+                        ->url(ProjectResource::getUrl('time', ['record' => $project]))
+                        ->visible(fn (): bool => ! auth()->user()?->isClient()),
                     NavItem::make('Files')->icon('heroicon-o-book-open')->children([
                         // A nested resource, scoped to this project.
                         NavItem::resource(DocumentResource::class, ['project' => $project]),
@@ -66,7 +102,7 @@ class AdminPanelProvider extends PanelProvider
                     NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
                         NavItem::make('General')->url(ProjectResource::getUrl('edit', ['record' => $project])),
                         NavItem::make('Advanced')->url(ProjectResource::getUrl('settings', ['record' => $project, 'section' => 'advanced'])),
-                    ]),
+                    ])->visible(fn (): bool => ! auth()->user()?->isClient()),
                 ]),
 
                 // Reuse Filament's own navigation: pages/resources that set $navigationGroup,
@@ -75,6 +111,7 @@ class AdminPanelProvider extends PanelProvider
                 ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => ! in_array($item->getUrl(), [
                     Dashboard::getUrl(),
                     ProjectResource::getUrl('index'),
+                    ClientResource::getUrl('index'),
                 ], true)),
 
                 // Modern, click-to-expand sections: children open in place with a guide line
