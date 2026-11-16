@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Agents;
+namespace App\Filament\Resources\Projects;
 
-use App\Filament\Resources\Agents\Pages\AgentSection;
-use App\Filament\Resources\Agents\Pages\CreateAgent;
-use App\Filament\Resources\Agents\Pages\EditAgent;
-use App\Filament\Resources\Agents\Pages\ListAgents;
-use App\Filament\Resources\Agents\Pages\ManageAgentDocuments;
-use App\Filament\Resources\Agents\Pages\ViewAgent;
-use App\Models\Agent;
+use App\Filament\Resources\Projects\Pages\CreateProject;
+use App\Filament\Resources\Projects\Pages\EditProject;
+use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Resources\Projects\Pages\ManageProjectDocuments;
+use App\Filament\Resources\Projects\Pages\ProjectSection;
+use App\Filament\Resources\Projects\Pages\ViewProject;
+use App\Models\Project;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -20,9 +20,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class AgentResource extends Resource
+class ProjectResource extends Resource
 {
-    protected static ?string $model = Agent::class;
+    protected static ?string $model = Project::class;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -32,7 +32,7 @@ class AgentResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('model')->required()->default('claude-sonnet-5-5'),
+            TextInput::make('status')->required()->default('active'),
         ]);
     }
 
@@ -40,7 +40,7 @@ class AgentResource extends Resource
     {
         return $schema->components([
             TextEntry::make('name'),
-            TextEntry::make('model'),
+            TextEntry::make('status'),
             TextEntry::make('documents_count')->counts('documents')->label('Documents'),
         ]);
     }
@@ -50,7 +50,7 @@ class AgentResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
-                TextColumn::make('model'),
+                TextColumn::make('status'),
                 TextColumn::make('documents_count')->counts('documents')->label('Documents'),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()]);
@@ -59,15 +59,15 @@ class AgentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListAgents::route('/'),
-            'create' => CreateAgent::route('/create'),
-            'view' => ViewAgent::route('/{record}'),
-            'edit' => EditAgent::route('/{record}/settings/general'),
-            // Agent-scoped resource (nested): /agents/{agent}/documents/...
-            'documents' => ManageAgentDocuments::route('/{record}/documents'),
+            'index' => ListProjects::route('/'),
+            'create' => CreateProject::route('/create'),
+            'view' => ViewProject::route('/{record}'),
+            'edit' => EditProject::route('/{record}/settings/general'),
+            // Project-scoped resource (nested): /projects/{project}/documents/...
+            'documents' => ManageProjectDocuments::route('/{record}/documents'),
             // Simple demo pages (registered last so the routes above win).
-            'settings' => AgentSection::route('/{record}/settings/{section}'),
-            'section' => AgentSection::route('/{record}/{section}'),
+            'settings' => ProjectSection::route('/{record}/settings/{section}'),
+            'section' => ProjectSection::route('/{record}/{section}'),
         ];
     }
 }

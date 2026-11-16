@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages\Reports;
 
-class UsageByAgentReport extends ReportPage
+class UsageByProjectReport extends ReportPage
 {
-    protected static ?string $navigationLabel = 'By agent';
+    protected static ?string $navigationLabel = 'By project';
 
     // Native "parent item": shown as a child of "Usage" (drill-down opens a sub level).
     protected static ?string $navigationParentItem = 'Usage';
 
-    protected static ?string $slug = 'reports/usage/by-agent';
+    protected static ?string $slug = 'reports/usage/by-project';
 }

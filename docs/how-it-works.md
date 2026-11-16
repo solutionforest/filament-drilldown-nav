@@ -6,8 +6,8 @@ This page explains **what problem the plugin solves**, **how a request turns int
 
 Filament's sidebar shows the whole tree at once, and sub-navigation for one cluster or page sits *next to the content* as a second menu. That works for two levels. It breaks down when:
 
-- an area has its own menu ("click an agent → Playground, Knowledge, Settings");
-- those items have sub menus (Knowledge → Documents, Websites), and you want 3–4 levels;
+- an area has its own menu ("click an project → Tasks, Files, Settings");
+- those items have sub menus (Files → Documents, Links), and you want 3–4 levels;
 - you want the menu to stay in **one place** (the left sidebar), not split across two.
 
 ```mermaid
@@ -30,7 +30,7 @@ flowchart LR
 
 | You want | Filament alone | This plugin |
 |---|---|---|
-| Menu for one record (agent, site, ...) | no (you build a custom sub-navigation per page) | `->record(fn ($record) => [...])` |
+| Menu for one record (project, site, ...) | no (you build a custom sub-navigation per page) | `->record(fn ($record) => [...])` |
 | 3–4 levels in the left sidebar | no (groups + one parent level) | yes, any depth |
 | Keep existing Resources/Pages and their `$navigationGroup` etc. | n/a | `NavItem::fromFilamentNavigation()` |
 | One menu location | no (sidebar + sub-navigation) | yes |
@@ -41,15 +41,15 @@ The plugin never stores "where the user is" in JavaScript. On **every request** 
 
 ```mermaid
 flowchart TD
-    A["Request: /admin/agents/7/documents"] --> B["Plugin items() closure<br/>(evaluated once per request)"]
+    A["Request: /admin/projects/7/documents"] --> B["Plugin items() closure<br/>(evaluated once per request)"]
     B --> C["ActivePathResolver::resolve()<br/>longest URL prefix wins"]
     C --> D{"Item has a record menu<br/>and the URL has a record key?"}
     D -- "no" --> F
     D -- "yes: key is not 'create'/ignored" --> E["Look up the record once<br/>(Resource route binding)<br/>build a record node:<br/>URL = list URL + key, children = your menu"]
     E --> F["Match continues inside the children<br/>(sub menus nest as deep as needed)"]
-    F --> G["Path: Agents > Support bot > Knowledge > Documents"]
+    F --> G["Path: Projects > Website redesign > Files > Documents"]
     G --> H["level(): children of the deepest item<br/>on the path that HAS children"]
-    H --> I["Sidebar: Back + title 'Knowledge'<br/>items: Documents, Websites"]
+    H --> I["Sidebar: Back + title 'Files'<br/>items: Documents, Links"]
 ```
 
 ### Choosing the level
@@ -74,23 +74,23 @@ Rules worth knowing:
 
 ## 3. A menu per record
 
-`NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [...])` makes the record menu one more level of the same tree:
+`NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [...])` makes the record menu one more level of the same tree:
 
 ```mermaid
 sequenceDiagram
     participant U as Browser
     participant R as ActivePathResolver
-    participant I as NavItem (Agents)
+    participant I as NavItem (Projects)
     participant F as Filament Resource
-    U->>R: GET /admin/agents/7/documents
-    R->>I: getRecordNode("/admin/agents/7/documents")
+    U->>R: GET /admin/projects/7/documents
+    R->>I: getRecordNode("/admin/projects/7/documents")
     I->>I: key = "7" (skip 'create' and fixed pages like 'import')
     I->>F: resolveRecordRouteBinding("7")
-    F-->>I: Agent #7 (or null: not a record)
-    I->>I: node(title = record title, url = /admin/agents/7,<br/>children = menu(agent))
+    F-->>I: Project #7 (or null: not a record)
+    I->>I: node(title = record title, url = /admin/projects/7,<br/>children = menu(project))
     I-->>R: record node (cached for this request)
     R->>R: keep matching inside the node's children
-    R-->>U: sidebar level for "Knowledge"
+    R-->>U: sidebar level for "Files"
 ```
 
 A failing lookup (for example a non-numeric key on a PostgreSQL integer column) is treated as "no such record", so such URLs fall back to the top level instead of erroring.
@@ -158,4 +158,4 @@ classDiagram
 
 - Collapsed (icon-only) sidebar mode is not specially handled yet.
 - The plugin owns the sidebar list: items you do not list (or import with `fromFilamentNavigation()`) are not shown.
-- The level is derived from the URL. A record menu therefore needs its URLs to live under the resource's own URL (`/admin/agents/{record}/...`).
+- The level is derived from the URL. A record menu therefore needs its URLs to live under the resource's own URL (`/admin/projects/{record}/...`).

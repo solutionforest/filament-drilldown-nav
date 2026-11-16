@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Agent;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -13,11 +13,11 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $support = Agent::create(['name' => 'Support bot']);
+        $support = Project::create(['name' => 'Website redesign']);
         $support->documents()->createMany([['title' => 'Refund policy'], ['title' => 'Shipping FAQ']]);
 
-        Agent::create(['name' => 'Sales assistant']);
-        Agent::create(['name' => 'Onboarding guide']);
+        Project::create(['name' => 'Mobile app']);
+        Project::create(['name' => 'Annual report']);
 
         User::factory()->create([
             'name' => 'Demo',

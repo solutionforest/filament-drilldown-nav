@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\Agents\Pages;
+namespace App\Filament\Resources\Projects\Pages;
 
-use App\Filament\Resources\Agents\AgentResource;
+use App\Filament\Resources\Projects\ProjectResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-/** The agent's Settings → General page. */
-class EditAgent extends EditRecord
+/** The project's Settings → General page. */
+class EditProject extends EditRecord
 {
-    protected static string $resource = AgentResource::class;
+    protected static string $resource = ProjectResource::class;
 
     public function getTitle(): string
     {

@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Agent extends Model
+class Project extends Model
 {
-    protected $fillable = ['name', 'model'];
+    protected $fillable = ['name', 'status'];
 
     public function documents(): HasMany
     {

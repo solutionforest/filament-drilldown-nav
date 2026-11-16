@@ -6,7 +6,7 @@ use SolutionForest\DrilldownNav\Tree\ActivePathResolver;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
 it('strips html from an Htmlable label for plain-text use', function () {
-    expect(NavItem::make(new HtmlString('<b>Agents</b>'))->getLabelText())->toBe('Agents')
+    expect(NavItem::make(new HtmlString('<b>Projects</b>'))->getLabelText())->toBe('Projects')
         ->and(NavItem::make('Plain')->getLabelText())->toBe('Plain');
 });
 
@@ -49,30 +49,30 @@ it('links a group to its first visible descendant with a url', function () {
 });
 
 it('treats "create" and custom ignored keys as pages, not records', function () {
-    $item = NavItem::make('Agents')->url('/admin/agents')
+    $item = NavItem::make('Projects')->url('/admin/projects')
         ->ignoreRecordKeys(['create', 'import'])
         ->resolveRecordUsing(fn (string $key) => $key === '7' ? 'Bot' : null)
         ->record(fn () => []);
 
-    expect($item->getRecordNode('/admin/agents/7/edit'))->not->toBeNull()
-        ->and($item->getRecordNode('/admin/agents/create'))->toBeNull()
-        ->and($item->getRecordNode('/admin/agents/import'))->toBeNull()
-        ->and($item->getRecordNode('/admin/agents/99'))->toBeNull()
-        ->and($item->getRecordNode('/admin/agents'))->toBeNull()
+    expect($item->getRecordNode('/admin/projects/7/edit'))->not->toBeNull()
+        ->and($item->getRecordNode('/admin/projects/create'))->toBeNull()
+        ->and($item->getRecordNode('/admin/projects/import'))->toBeNull()
+        ->and($item->getRecordNode('/admin/projects/99'))->toBeNull()
+        ->and($item->getRecordNode('/admin/projects'))->toBeNull()
         ->and($item->getRecordNode('/admin/other/7'))->toBeNull();
 });
 
 it('treats a database error while resolving a record as "no such record"', function () {
-    $item = NavItem::make('Agents')->url('/admin/agents')
+    $item = NavItem::make('Projects')->url('/admin/projects')
         ->resolveRecordUsing(fn (string $key) => throw new QueryException('pgsql', 'select', [], new Exception('invalid input syntax')))
         ->record(fn () => []);
 
-    expect($item->getRecordNode('/admin/agents/abc'))->toBeNull();
+    expect($item->getRecordNode('/admin/projects/abc'))->toBeNull();
 });
 
 it('resolves each record only once per request', function () {
     $lookups = 0;
-    $item = NavItem::make('Agents')->url('/admin/agents')
+    $item = NavItem::make('Projects')->url('/admin/projects')
         ->resolveRecordUsing(function (string $key) use (&$lookups) {
             $lookups++;
 
@@ -80,29 +80,29 @@ it('resolves each record only once per request', function () {
         })
         ->record(fn () => []);
 
-    $item->getRecordNode('/admin/agents/7');
-    $item->getRecordNode('/admin/agents/7/edit');
+    $item->getRecordNode('/admin/projects/7');
+    $item->getRecordNode('/admin/projects/7/edit');
 
     expect($lookups)->toBe(1);
 });
 
 it('opens sub menus nested inside a record menu', function () {
     $tree = [
-        NavItem::make('Agents')->url('/admin/agents')
+        NavItem::make('Projects')->url('/admin/projects')
             ->resolveRecordUsing(fn (string $key) => 'Bot')
-            ->recordTitleUsing(fn () => 'Support bot')
+            ->recordTitleUsing(fn () => 'Website redesign')
             ->record(fn () => [
-                NavItem::make('Knowledge')->children([
-                    NavItem::make('Documents')->url('/admin/agents/7/documents'),
-                    NavItem::make('Websites')->url('/admin/agents/7/websites'),
+                NavItem::make('Files')->children([
+                    NavItem::make('Documents')->url('/admin/projects/7/documents'),
+                    NavItem::make('Links')->url('/admin/projects/7/links'),
                 ]),
             ]),
     ];
 
     $resolver = new ActivePathResolver;
-    $level = $resolver->level($tree, $resolver->resolve($tree, '/admin/agents/7/documents', '/admin'), '/admin');
+    $level = $resolver->level($tree, $resolver->resolve($tree, '/admin/projects/7/documents', '/admin'), '/admin');
 
-    expect($level['title'])->toBe('Knowledge')
-        ->and(array_map(fn (NavItem $i) => $i->getLabelText(), $level['items']))->toBe(['Documents', 'Websites'])
+    expect($level['title'])->toBe('Files')
+        ->and(array_map(fn (NavItem $i) => $i->getLabelText(), $level['items']))->toBe(['Documents', 'Links'])
         ->and((string) $level['active']?->getLabelText())->toBe('Documents');
 });

@@ -75,7 +75,7 @@ class NavItem
 
     /**
      * A Filament Resource: label, icon, list URL and access come from the resource class.
-     * Pass URL parameters for a nested resource, e.g. `['agent' => $agent]`.
+     * Pass URL parameters for a nested resource, e.g. `['project' => $project]`.
      *
      * @param  array<string, mixed>  $parameters
      */
@@ -93,7 +93,7 @@ class NavItem
     }
 
     /**
-     * Fixed URL segments registered right below $url (e.g. "import" for /admin/agents/import),
+     * Fixed URL segments registered right below $url (e.g. "import" for /admin/projects/import),
      * so such list-level pages are never mistaken for a record key.
      *
      * @return array<int, string>
