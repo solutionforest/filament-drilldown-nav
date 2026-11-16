@@ -33,10 +33,12 @@ case "$SERVER" in
     [ -x ./rr ] || { echo "Could not obtain the RoadRunner binary"; exit 4; } ;;
   frankenphp)
     if [ ! -x ./frankenphp ]; then
-      if [ ! -x "$CACHE/frankenphp" ]; then
-        curl -fsSL -o "$CACHE/frankenphp" "https://github.com/php/frankenphp/releases/latest/download/frankenphp-linux-x86_64" && chmod +x "$CACHE/frankenphp"
+      ARCH="$(uname -m)"; case "$ARCH" in arm64) ARCH=aarch64 ;; esac   # x86_64 | aarch64
+      BIN="$CACHE/frankenphp-$ARCH"                                      # cached per architecture
+      if [ ! -x "$BIN" ]; then
+        curl -fsSL -o "$BIN" "https://github.com/php/frankenphp/releases/latest/download/frankenphp-linux-$ARCH" && chmod +x "$BIN"
       fi
-      [ -x "$CACHE/frankenphp" ] && cp "$CACHE/frankenphp" ./frankenphp
+      [ -x "$BIN" ] && cp "$BIN" ./frankenphp
     fi
     [ -x ./frankenphp ] || { echo "Could not obtain the FrankenPHP binary"; exit 4; } ;;
 esac
