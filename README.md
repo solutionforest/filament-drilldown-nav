@@ -170,7 +170,7 @@ NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->childre
 | `NavItem::heading('…')`, `->divider()` | non-clickable section headings and separator lines |
 | `->icon()`, `->activeIcon()`, `->badge()` | icons (outline/solid when current) and badges; icon-less nested items get Filament's guide line and dot |
 
-What you get without extra code: the section containing the current page is **open** and its parents marked; guide lines for nested items (Filament's own style); chevrons that rotate; state remembered across page loads; **collapsed (icon-only) sidebar** when the panel uses `->sidebarCollapsibleOnDesktop()` (labels, titles and badges hide, Back keeps its arrow with a tooltip, tooltips on items); keyboard-operable toggle buttons with `aria-expanded`; `aria-current="page"` on the current item; a labelled `nav` landmark; focus moves to the new level's title when you drill in or out; `prefers-reduced-motion` respected; and mirrored chevrons/animation for right-to-left pages (CSS only, not yet tested).
+What you get without extra code: the section containing the current page is **open** and its parents marked; guide lines for nested items (Filament's own style); chevrons that rotate; state remembered across page loads; **collapsed (icon-only) sidebar** when the panel uses `->sidebarCollapsibleOnDesktop()` (labels, titles and badges hide, Back keeps its arrow with a tooltip, tooltips on items); keyboard-operable toggle buttons with `aria-expanded`; `aria-current="page"` on the current item; a labelled `nav` landmark; focus moves to the new level's title when you drill in or out; `prefers-reduced-motion` respected; and mirrored chevrons, Back arrow and animation for right-to-left pages (checked with Arabic).
 
 | Expand in place (`->inline()`) | Nested, with guide lines |
 |---|---|
@@ -185,13 +185,15 @@ What you get without extra code: the section containing the current page is **op
 ## Multi-panel, Octane, tenants, languages
 
 - **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
-- **Octane / long-lived workers:** safe. Request-specific state (item tree, children, record lookups) lives in a request-scoped binding that is discarded after each request. Pass a **closure** to `items()` so menus can depend on the user, tenant or database; static `NavItem`s built once are fine for static menus. Verified with simulated worker reuse in the tests and with a real RoadRunner worker (see Quality).
+- **Octane / long-lived workers:** safe. Request-specific state (item tree, children, record lookups) lives in a request-scoped binding that is discarded after each request. Pass a **closure** to `items()` so menus can depend on the user, tenant or database; static `NavItem`s built once are fine for static menus. Verified with simulated worker reuse in the tests and with **real Octane workers on RoadRunner, Swoole and FrankenPHP** (run in CI, see Quality).
 - **Tenancy and domains:** Home and Back use `Panel::getUrl($tenant)`, so `https://app.test/admin/{tenant}` and panels on their own domain work. (Demo: `workspace` panel with tenancy on `workspace.localhost`.)
-- **Languages:** "Back" and the navigation landmark are translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어 and Español. Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left layouts are covered by CSS (mirrored chevrons and animation) but not yet tested with an RTL language.
+- **Languages:** "Back" and the navigation landmark are translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어, Español and العربية (right-to-left). Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left is supported: with an RTL locale the chevrons, Back arrow and slide animation mirror (checked in a browser with Arabic).
 
 | Japanese UI | Second panel with its own tree |
 |---|---|
 | ![ja](docs/screenshots/11-japanese.png) | ![portal](docs/screenshots/12-portal-panel.png) |
+| **Arabic (right-to-left): top level** | **Arabic: inside a project** |
+| ![ar root](docs/screenshots/30-rtl-root.png) | ![ar record](docs/screenshots/31-rtl-record.png) |
 
 ## Demo app: a small agency's client portal
 
@@ -259,8 +261,8 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 - **Pest** (package): URL matching, level selection, groups, per-record menus, nested sub menus, once-per-request evaluation, ignored keys, failing lookups.
 - **Demo feature tests**: each level, record menus, nested resources, native navigation import, badges, permissions, no duplicates; plus tests on the seeded agency (row counts, real badge numbers, all table pages with real rows, the five-level path, each role's menu, client data isolation, a query budget per page).
 - **PHPStan level 9** on `src/`, with no ignores.
-- **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. A real RoadRunner/Octane worker (one worker, three rounds of alternating users and panels, a record changed in the database between requests) was also checked by hand; that run is not part of CI.
-- **Languages:** every shipped language is tested for rendering and for having the same keys.
+- **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. In addition, `demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a **real one-worker Octane server** and runs 21 checks (two users and three panels alternating over three rounds, a record renamed between requests); CI runs it for all three servers. The script was checked by mutation: making the plugin's request state outlive the request makes it fail.
+- **Languages:** every shipped language is tested for rendering and for having the same keys; Arabic is also checked for `dir="rtl"` and in a browser.
 - **Modern navigation:** expand/collapse state, nesting, headings, dividers, chevrons, the collapsed mode and the focus target are tested in the demo and with a real browser (click, keyboard, reload, collapse); the tests were checked by mutation (breaking the feature makes them fail).
 - CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
 

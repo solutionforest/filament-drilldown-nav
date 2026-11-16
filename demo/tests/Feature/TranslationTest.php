@@ -23,6 +23,7 @@ class TranslationTest extends TestCase
             '日本語' => ['ja', '戻る', 'ナビゲーション'],
             '한국어' => ['ko', '뒤로', '탐색'],
             'Español' => ['es', 'Atrás', 'Navegación'],
+            'العربية' => ['ar', 'رجوع', 'التنقل'],
         ];
     }
 
@@ -44,6 +45,16 @@ class TranslationTest extends TestCase
         foreach (glob(__DIR__.'/../../../resources/lang/*/messages.php') ?: [] as $file) {
             $this->assertSame($english, array_keys(require $file), basename(dirname($file)));
         }
+    }
+
+    public function test_arabic_renders_right_to_left_with_the_mirroring_rules_present(): void
+    {
+        $html = (string) $this->actingAs(User::factory()->create())->get('/admin/reports/usage?lang=ar')->getContent();
+
+        $this->assertMatchesRegularExpression('#<html[^>]*dir="rtl"#s', $html);
+        // the plugin's RTL rules: mirrored chevrons and the reversed slide animation
+        $this->assertStringContainsString('[dir="rtl"] .fi-drilldown-toggle-icon', $html);
+        $this->assertStringContainsString('[dir="rtl"] .fi-drilldown-list[data-direction="forward"]', $html);
     }
 
     public function test_unknown_language_falls_back_to_english(): void

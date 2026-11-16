@@ -148,7 +148,7 @@ flowchart TD
 - **Per request, not per worker.** The evaluated item tree, children closures, record lookups and the native-navigation capture live in `RequestState`, a *scoped* container binding: Laravel (and Octane) drop it after every request. The plugin object, panel and any `NavItem` you built outside a closure stay alive for the whole worker, so nothing request-specific is stored on them. This is why one request can never see another's record titles or children.
 - **Panel-scoped hook.** The sidebar is rendered by a hook registered on the panel itself (not globally) and only when that panel is the one being shown. Two panels can use the plugin with different trees, and a panel without the plugin keeps Filament's own sidebar.
 - **Tenants and domains.** Home, Back-to-root and the "exact match" rule use the URL Filament itself builds for the panel (`Panel::getUrl($tenant)`): domain, path and tenant included. The request path includes the application's base path, so sub-directory installs match too.
-- **Languages.** The two strings the plugin owns ("Back" and the landmark label) are translated in English, Simplified/Traditional Chinese (`zh_CN`, `zh_TW`, `zh_HK`), Japanese, Korean and Spanish, and can be overridden by publishing the translations. Your own labels are yours to translate.
+- **Languages.** The two strings the plugin owns ("Back" and the landmark label) are translated in English, Simplified/Traditional Chinese (`zh_CN`, `zh_TW`, `zh_HK`), Japanese, Korean, Spanish and Arabic (العربية, right-to-left), and can be overridden by publishing the translations. Your own labels are yours to translate.
 
 ## 7. What is in the box
 
@@ -197,7 +197,7 @@ classDiagram
 ## 8. Limits
 
 - Items without an icon show nothing in the collapsed (icon-only) sidebar: give top-level items an icon.
-- Right-to-left is handled in CSS (mirrored chevrons and animation) but has not been tested with an RTL language.
+- Right-to-left: supported and checked in a browser with Arabic (mirrored chevrons, Back arrow and animation); other RTL locales (Hebrew, Persian, Urdu) use the same rules but have no shipped translations of the plugin's two strings, so they fall back to English.
 - The plugin owns the sidebar list: items you do not list (or import with `fromFilamentNavigation()`) are not shown.
 - Right-to-left languages: strings and `dir` are fine, but the slide animation and chevrons are not mirrored yet.
 - The level is derived from the URL. A record menu therefore needs its URLs to live under the resource's own URL (`/admin/projects/{record}/...`).
