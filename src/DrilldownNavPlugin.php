@@ -6,10 +6,10 @@ namespace SolutionForest\DrilldownNav;
 
 use Closure;
 use Filament\Contracts\Plugin;
+use Filament\Navigation\NavigationBuilder;
 use Filament\Panel;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
 use SolutionForest\DrilldownNav\Tree\NavNode;
 
 class DrilldownNavPlugin implements Plugin
@@ -48,15 +48,16 @@ class DrilldownNavPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        // Suppress Filament's native sidebar navigation; ours replaces it.
-        $panel->navigation(false);
+        // Empty the native navigation but keep the sidebar shell (and its render hooks):
+        // navigation(false) would remove the sidebar entirely.
+        $panel->navigation(fn (NavigationBuilder $builder): NavigationBuilder => $builder);
     }
 
     public function boot(Panel $panel): void
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::SIDEBAR_NAV_START,
-            fn (): string => Blade::render('<x-filament-drilldown-nav::sidebar />'),
+            fn (): string => view('filament-drilldown-nav::sidebar')->render(),
         );
     }
 }

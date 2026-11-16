@@ -1,0 +1,34 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  package:
+    name: Package (Pest + Pint)
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/pint --test
+      - run: vendor/bin/pest
+
+  demo:
+    name: Demo app (Laravel 13 + Filament v5)
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install demo dependencies
+        working-directory: demo
+        run: composer install --no-interaction --prefer-dist
+      - name: Prepare app
+        working-directory: demo
+        run: |
+          cp -n .env.example .env || true
+          php artisan key:generate --force
+          touch database/database.sqlite
+      - name: Feature tests
+        working-directory: demo
+        run: php artisan test

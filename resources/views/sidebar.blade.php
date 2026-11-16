@@ -8,7 +8,7 @@
 
 <nav
     x-data
-    class="fi-drilldown-nav flex flex-col gap-y-1"
+    class="fi-drilldown-nav"
     data-depth="{{ $level['depth'] }}"
 >
     @if ($level['parent'])
@@ -16,14 +16,14 @@
         <a
             href="{{ $grand?->getUrl() ?? url(filament()->getCurrentPanel()->getPath()) }}"
             wire:navigate
-            class="flex items-center gap-x-2 px-2 py-2 text-sm font-medium text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-white"
+            class="fi-drilldown-back"
         >
-            <x-filament::icon icon="heroicon-m-chevron-left" class="h-5 w-5" />
+            <x-filament::icon icon="heroicon-m-chevron-left" style="width:1.25rem;height:1.25rem" />
             {{ $level['parent']->getLabel() }}
         </a>
     @endif
 
-    <ul class="flex flex-col gap-y-1" x-transition.opacity>
+    <ul class="fi-drilldown-list">
         @foreach ($level['items'] as $node)
             <x-filament-panels::sidebar.item
                 :active="in_array($node->getId(), $activeIds, true)"
@@ -35,3 +35,13 @@
         @endforeach
     </ul>
 </nav>
+
+<style>
+    .fi-drilldown-nav { display: flex; flex-direction: column; gap: 0.25rem; }
+    .fi-drilldown-list { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; padding: 0; list-style: none; animation: fi-drilldown-in 0.2s ease-out; }
+    .fi-drilldown-back { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--gray-500); text-decoration: none; }
+    .fi-drilldown-back:hover { color: var(--gray-950); }
+    .dark .fi-drilldown-back { color: var(--gray-400); }
+    .dark .fi-drilldown-back:hover { color: #fff; }
+    @keyframes fi-drilldown-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+</style>
