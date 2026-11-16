@@ -16,6 +16,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use SolutionForest\DrilldownNav\ChildDisplay;
 use SolutionForest\DrilldownNav\DrilldownNavPlugin;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
@@ -29,7 +30,7 @@ class PortalPanelProvider extends PanelProvider
             ->path('portal')
             ->login()
             ->pages([Dashboard::class, DemoPage::class])
-            ->plugin(DrilldownNavPlugin::make()->items(fn () => [
+            ->plugin(DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)->items(fn () => [
                 NavItem::page(Dashboard::class),
                 NavItem::make('Support')->url('/portal/demo/support')->children([
                     NavItem::make('Tickets')->url('/portal/demo/support/tickets'),

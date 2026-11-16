@@ -37,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->sidebarCollapsibleOnDesktop()
             ->spa((bool) env('DEMO_SPA', false))
             ->colors([
                 'primary' => Color::Amber,
@@ -75,6 +76,23 @@ class AdminPanelProvider extends PanelProvider
                     Dashboard::getUrl(),
                     ProjectResource::getUrl('index'),
                 ], true)),
+
+                // Modern, click-to-expand sections: children open in place with a guide line
+                // (->inline()), can nest, remember their state, and sit under a heading + divider.
+                NavItem::heading('Workspace')->divider(),
+                NavItem::make('Team')->icon('heroicon-o-users')->inline()->defaultExpanded()->children([
+                    NavItem::make('Members')->url('/admin/demo/team/members')->badge('8'),
+                    NavItem::make('Roles')->url('/admin/demo/team/roles'),
+                    NavItem::make('Invitations')->url('/admin/demo/team/invitations')->badge('2', 'warning'),
+                ]),
+                NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->children([
+                    NavItem::make('Overview')->url('/admin/demo/subscription/overview'),
+                    NavItem::make('Invoices')->inline()->children([
+                        NavItem::make('Paid')->url('/admin/demo/subscription/invoices/paid'),
+                        NavItem::make('Unpaid')->url('/admin/demo/subscription/invoices/unpaid')->badge('3', 'danger'),
+                    ]),
+                    NavItem::make('Plans')->url('/admin/demo/subscription/plans'),
+                ]),
 
                 // Visible to the demo admin only (evaluated per request, per user).
                 NavItem::make('Audit log')->icon('heroicon-o-shield-check')->url('/admin/demo/audit')

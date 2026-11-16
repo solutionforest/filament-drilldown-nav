@@ -3,6 +3,7 @@
 use Illuminate\Container\Container;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\HtmlString;
+use SolutionForest\DrilldownNav\ChildDisplay;
 use SolutionForest\DrilldownNav\RequestState;
 use SolutionForest\DrilldownNav\Tree\ActivePathResolver;
 use SolutionForest\DrilldownNav\Tree\NavItem;
@@ -161,4 +162,93 @@ it('keeps request state per item and frees it with the item', function () {
         ->and($state->remember($b, 'k', fn () => 3))->toBe(3)
         ->and($state->remember($a, 'null', fn () => null))->toBeNull()
         ->and($state->remember($a, 'null', fn () => 'set'))->toBeNull(); // null results are remembered too
+});
+
+/** Phase B: modern navigation features. */
+it('knows whether it expands in place, with the plugin default as fallback', function () {
+    $plain = NavItem::make('A')->children([NavItem::make('B')]);
+
+    expect($plain->isInline())->toBeFalse()
+        ->and($plain->isInline(default: true))->toBeTrue()
+        ->and($plain->inline()->isInline())->toBeTrue()
+        ->and($plain->drilldown()->isInline(default: true))->toBeFalse(); // explicit beats the default
+});
+
+it('only opens its own level when it has children and is not inline', function () {
+    $drill = NavItem::make('A')->children([NavItem::make('B')]);
+    $inline = NavItem::make('A')->inline()->children([NavItem::make('B')]);
+    $leaf = NavItem::make('Leaf');
+
+    expect($drill->opensLevel())->toBeTrue()
+        ->and($drill->opensLevel(inlineByDefault: true))->toBeFalse()
+        ->and($inline->opensLevel())->toBeFalse()
+        ->and($leaf->opensLevel())->toBeFalse();
+});
+
+it('does not drill into inline items: they stay in their parent level', function () {
+    $tree = [
+        NavItem::make('Team')->inline()->children([
+            NavItem::make('Members')->url('/admin/team/members'),
+        ]),
+        NavItem::make('Other')->url('/admin/other'),
+    ];
+
+    $r = new ActivePathResolver;
+    $level = $r->level($tree, $r->resolve($tree, '/admin/team/members', '/admin'), '/admin');
+
+    expect($level['parent'])->toBeNull() // still the root list
+        ->and(array_map(fn (NavItem $i) => $i->getLabelText(), $level['items']))->toBe(['Team', 'Other'])
+        ->and($level['active']?->getLabelText())->toBe('Team');
+});
+
+it('drills past inline items to the nearest item that opens a level', function () {
+    $tree = [
+        NavItem::make('Docs')->url('/admin/docs')->children([
+            NavItem::make('Guides')->url('/admin/docs/guides')->inline()->children([
+                NavItem::make('Install')->url('/admin/docs/guides/install'),
+            ]),
+        ]),
+    ];
+
+    $r = new ActivePathResolver;
+    $level = $r->level($tree, $r->resolve($tree, '/admin/docs/guides/install', '/admin'), '/admin');
+
+    expect($level['title'])->toBe('Docs')
+        ->and(array_map(fn (NavItem $i) => $i->getLabelText(), $level['items']))->toBe(['Guides'])
+        ->and($level['back'])->toBe('/admin');
+});
+
+it('treats headings as non-clickable labels that never affect matching or links', function () {
+    $heading = NavItem::heading('Manage')->divider();
+
+    expect($heading->isHeading())->toBeTrue()
+        ->and($heading->hasDivider())->toBeTrue()
+        ->and($heading->getLinkUrl())->toBeNull()
+        ->and(NavItem::make('x')->isHeading())->toBeFalse();
+
+    $group = NavItem::make('G')->children([
+        NavItem::heading('Section'),
+        NavItem::make('First')->url('/first'),
+    ]);
+
+    expect($group->getLinkUrl())->toBe('/first'); // skips the heading
+
+    $tree = [NavItem::heading('Top'), NavItem::make('Home')->url('/admin/home')];
+    $r = new ActivePathResolver;
+    $resolved = $r->resolve($tree, '/admin/home', '/admin');
+
+    expect(array_map(fn (NavItem $i) => $i->getLabelText(), $resolved['path']))->toBe(['Home']);
+});
+
+it('supports expanded-by-default and an active icon', function () {
+    $item = NavItem::make('Team')->inline()->defaultExpanded()->icon('heroicon-o-users')->activeIcon('heroicon-s-users');
+
+    expect($item->isDefaultExpanded())->toBeTrue()
+        ->and($item->getActiveIcon())->toBe('heroicon-s-users')
+        ->and(NavItem::make('x')->isDefaultExpanded())->toBeFalse();
+});
+
+it('has a child display enum with drilldown and inline', function () {
+    expect(ChildDisplay::Drilldown->value)->toBe('drilldown')
+        ->and(ChildDisplay::Inline->value)->toBe('inline');
 });

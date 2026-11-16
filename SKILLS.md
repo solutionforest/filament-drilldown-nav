@@ -72,6 +72,18 @@ For a non-resource item use `->resolveRecordUsing(fn (string $key) => ...)` and 
 ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => $item->getUrl() !== Dashboard::getUrl())
 ```
 
+## Modern navigation (click to expand, headings, collapsed mode)
+
+```php
+NavItem::heading('Workspace')->divider();                      // section label + line above
+NavItem::make('Team')->icon('heroicon-o-users')->inline()->defaultExpanded()->children([...]); // expand in place
+DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)->items(...);  // inline by default for the panel
+```
+
+- `->inline()` / `->drilldown()` per item; inline sections can nest; the section containing the current page is open; state is remembered in the browser.
+- Collapsed icon-only mode comes with the panel's `->sidebarCollapsibleOnDesktop()`: **give top-level items icons**.
+- Keep headings/dividers out of URL logic: they have no URL by design.
+
 ## Multi-panel, Octane, tenants, languages
 
 - Register the plugin on as many panels as you like, each with its own `items()`. Panels without it are untouched.
