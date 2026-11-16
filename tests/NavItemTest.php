@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Container\Container;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\HtmlString;
+use SolutionForest\DrilldownNav\RequestState;
 use SolutionForest\DrilldownNav\Tree\ActivePathResolver;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
@@ -105,4 +107,58 @@ it('opens sub menus nested inside a record menu', function () {
     expect($level['title'])->toBe('Files')
         ->and(array_map(fn (NavItem $i) => $i->getLabelText(), $level['items']))->toBe(['Documents', 'Links'])
         ->and((string) $level['active']?->getLabelText())->toBe('Documents');
+});
+
+/** Worker reuse (Octane): scoped state is dropped between requests, objects built once are reused. */
+function nextRequest(): void
+{
+    Container::getInstance()->forgetScopedInstances();
+}
+
+it('re-evaluates children closures on the next request, even for items built once per worker', function () {
+    $calls = 0;
+    $item = NavItem::make('Sites')->url('/admin/sites')->children(function () use (&$calls) {
+        $calls++;
+
+        return [NavItem::make('Site '.$calls)->url('/admin/sites/'.$calls)];
+    });
+
+    expect($item->getChildren()[0]->getLabelText())->toBe('Site 1')
+        ->and($item->getChildren()[0]->getLabelText())->toBe('Site 1'); // same request: memoized
+
+    nextRequest();
+
+    expect($item->getChildren()[0]->getLabelText())->toBe('Site 2')
+        ->and($calls)->toBe(2);
+});
+
+it('looks a record up again on the next request', function () {
+    $title = 'Alpha';
+    $item = NavItem::make('Projects')->url('/admin/projects')
+        ->resolveRecordUsing(fn (string $key) => $key)
+        ->recordTitleUsing(function () use (&$title) {
+            return $title;
+        })
+        ->record(fn () => []);
+
+    expect($item->getRecordNode('/admin/projects/7')?->getLabelText())->toBe('Alpha');
+
+    $title = 'Beta';
+    expect($item->getRecordNode('/admin/projects/7')?->getLabelText())->toBe('Alpha'); // same request
+
+    nextRequest();
+
+    expect($item->getRecordNode('/admin/projects/7')?->getLabelText())->toBe('Beta');
+});
+
+it('keeps request state per item and frees it with the item', function () {
+    $state = RequestState::current();
+    $a = new stdClass;
+    $b = new stdClass;
+
+    expect($state->remember($a, 'k', fn () => 1))->toBe(1)
+        ->and($state->remember($a, 'k', fn () => 2))->toBe(1)
+        ->and($state->remember($b, 'k', fn () => 3))->toBe(3)
+        ->and($state->remember($a, 'null', fn () => null))->toBeNull()
+        ->and($state->remember($a, 'null', fn () => 'set'))->toBeNull(); // null results are remembered too
 });

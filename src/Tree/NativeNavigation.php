@@ -13,6 +13,7 @@ use Filament\Navigation\NavigationManager;
 use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 use Illuminate\Contracts\Support\Htmlable;
+use SolutionForest\DrilldownNav\RequestState;
 use UnitEnum;
 
 /**
@@ -23,45 +24,41 @@ use UnitEnum;
  */
 class NativeNavigation
 {
-    protected static bool $capturing = false;
-
-    protected static bool $didCapture = false;
-
-    /** @var array<int, NavigationItem> */
-    protected static array $captured = [];
-
     /**
      * Called from the plugin's navigation builder while Filament builds its sidebar: only then
      * are Resources and Pages registering their navigation items on the (scoped) manager.
      */
     public static function capture(): void
     {
+        $state = RequestState::current();
+
         // Filament may resolve the builder several times per build; mounting twice would duplicate items.
-        if (! static::$capturing || static::$didCapture) {
+        if (! $state->capturingNativeNavigation || $state->capturedNativeNavigation) {
             return;
         }
 
-        static::$didCapture = true;
+        $state->capturedNativeNavigation = true;
 
         $manager = app(NavigationManager::class);
         $manager->mountNavigation();
-        static::$captured = $manager->getNavigationItems();
+        $state->nativeItems = $manager->getNavigationItems();
     }
 
     /** @return array<int, NavigationItem> */
     protected static function collectNativeItems(): array
     {
-        static::$capturing = true;
-        static::$didCapture = false;
-        static::$captured = [];
+        $state = RequestState::current();
+        $state->capturingNativeNavigation = true;
+        $state->capturedNativeNavigation = false;
+        $state->nativeItems = [];
 
         try {
             Filament::getCurrentOrDefaultPanel()?->getNavigation();
 
-            return static::$captured;
+            return $state->nativeItems;
         } finally {
-            static::$capturing = false;
-            static::$captured = [];
+            $state->capturingNativeNavigation = false;
+            $state->nativeItems = [];
         }
     }
 

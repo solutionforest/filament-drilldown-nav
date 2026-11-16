@@ -72,6 +72,13 @@ For a non-resource item use `->resolveRecordUsing(fn (string $key) => ...)` and 
 ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => $item->getUrl() !== Dashboard::getUrl())
 ```
 
+## Multi-panel, Octane, tenants, languages
+
+- Register the plugin on as many panels as you like, each with its own `items()`. Panels without it are untouched.
+- Octane-safe: pass a **closure** to `items()`; it runs once per request. Don't keep request data (the current user, a tenant, a record) in `NavItem`s built outside a closure.
+- Tenancy and domains work because Home/Back use `Panel::getUrl($tenant)`. Build your own item URLs with Filament (`Page::getUrl()`, `Resource::getUrl()`), which are tenant-aware, instead of hard-coding `/admin/...`.
+- Shipped languages for the plugin's own text: en, zh_CN, zh_TW, zh_HK, ja, ko, es. Translate your item labels yourself (`__()` in the closure).
+
 ## Rules of thumb
 
 - **Record menu URLs must live under the resource's URL** (`/admin/projects/{record}/...`). Register extra pages on the resource (`'section' => ProjectSection::route('/{record}/{section}')`, after `edit`) and link to them with `Resource::getUrl()`.

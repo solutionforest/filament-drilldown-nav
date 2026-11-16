@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\DemoPage;
 use App\Filament\Resources\Projects\Documents\DocumentResource;
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Http\Middleware\SetLocale;
 use App\Models\Project;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -75,6 +76,10 @@ class AdminPanelProvider extends PanelProvider
                     ProjectResource::getUrl('index'),
                 ], true)),
 
+                // Visible to the demo admin only (evaluated per request, per user).
+                NavItem::make('Audit log')->icon('heroicon-o-shield-check')->url('/admin/demo/audit')
+                    ->visible(fn (): bool => auth()->user()?->email === 'demo@example.com'),
+
                 // Static 4-level tree (custom pages / React pages are just URLs).
                 NavItem::make('Docs')->icon('heroicon-o-book-open')->url('/admin/demo/docs')->children([
                     NavItem::make('Guides')->url('/admin/demo/docs/guides')->children([
@@ -105,6 +110,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                SetLocale::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

@@ -11,14 +11,12 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
+use SolutionForest\DrilldownNav\RequestState;
 
 class NavItem
 {
     /** @var array<int, NavItem>|Closure|null */
     protected array|Closure|null $children = null;
-
-    /** @var array<int, NavItem>|null memoized result of, per request */
-    protected ?array $resolvedChildren = null;
 
     protected string|BackedEnum|Htmlable|null $icon = null;
 
@@ -40,9 +38,6 @@ class NavItem
 
     /** @var array<int, string>|Closure */
     protected array|Closure $ignoredRecordKeys = ['create'];
-
-    /** @var array<string, NavItem|null> record nodes, per record key, per request */
-    protected array $recordNodes = [];
 
     final public function __construct(protected string|Htmlable $label) {}
 
@@ -138,7 +133,6 @@ class NavItem
     public function children(array|Closure $children): static
     {
         $this->children = $children;
-        $this->resolvedChildren = null;
 
         return $this;
     }
@@ -265,12 +259,11 @@ class NavItem
      */
     public function getChildren(): array
     {
-        if ($this->resolvedChildren === null) {
+        return RequestState::current()->remember($this, 'children', function (): array {
             $children = $this->children instanceof Closure ? ($this->children)() : ($this->children ?? []);
-            $this->resolvedChildren = array_values(array_filter($children, fn (NavItem $n) => $n->isVisible()));
-        }
 
-        return $this->resolvedChildren;
+            return array_values(array_filter($children, fn (NavItem $n) => $n->isVisible()));
+        });
     }
 
     public function hasChildren(): bool
@@ -307,22 +300,16 @@ class NavItem
             return null;
         }
 
-        if (! array_key_exists($key, $this->recordNodes)) {
-            $this->recordNodes[$key] = $this->makeRecordNode($key, rtrim($this->url, '/').'/'.$key);
-        }
+        $url = $this->url;
 
-        return $this->recordNodes[$key];
+        return RequestState::current()->remember($this, 'record:'.$key, fn (): ?NavItem => $this->makeRecordNode($key, rtrim($url, '/').'/'.$key));
     }
 
     protected function makeRecordNode(string $key, string $url): ?NavItem
     {
-        if ($this->ignoredRecordKeys instanceof Closure) {
-            $this->ignoredRecordKeys = ($this->ignoredRecordKeys)();
-        }
+        $ignored = RequestState::current()->remember($this, 'ignored-keys', fn (): array => $this->ignoredRecordKeys instanceof Closure ? ($this->ignoredRecordKeys)() : $this->ignoredRecordKeys);
 
-        $ignored = $this->ignoredRecordKeys;
-
-        if (is_array($ignored) && in_array($key, $ignored, true)) {
+        if (in_array($key, $ignored, true)) {
             return null;
         }
 
