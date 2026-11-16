@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\QueryException;
 use SolutionForest\DrilldownNav\Tree\ActivePathResolver;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
@@ -159,4 +160,106 @@ it('shows a per-record menu inside one record', function () {
         [, $level] = resolveNav($tree, $path);
         expect($level['title'])->toBeNull();
     }
+});
+
+function agentTree(): array
+{
+    $agents = [7 => 'Support bot'];
+
+    return [
+        NavItem::make('Home')->url('/admin'),
+        NavItem::make('Agents')->url('/admin/agents')
+            ->resolveRecordUsing(fn (string $key) => $agents[$key] ?? null)
+            ->record(fn (string $agent) => [
+                NavItem::make('Overview')->url('/admin/agents/7'),
+                NavItem::make('Playground')->url('/admin/agents/7/playground'),
+                NavItem::make('Knowledge')->url('/admin/agents/7/knowledge')->children([
+                    NavItem::make('Documents')->url('/admin/agents/7/knowledge/documents'),
+                    NavItem::make('Websites')->url('/admin/agents/7/knowledge/websites'),
+                ]),
+                NavItem::make('Settings')->children([
+                    NavItem::make('General')->url('/admin/agents/7/settings/general'),
+                    NavItem::make('Advanced')->url('/admin/agents/7/settings/advanced'),
+                ]),
+            ]),
+        NavItem::make('Settings')->url('/admin/settings'),
+    ];
+}
+
+it('opens a sub menu inside a record menu (re-review 1)', function () {
+    [$resolved, $level] = resolveNav(agentTree(), '/admin/agents/7/knowledge/documents/3/edit');
+
+    expect(labels($resolved['path']))->toBe(['Agents', 'Support bot', 'Knowledge', 'Documents'])
+        ->and($level['title'])->toBe('Knowledge')
+        ->and(labels($level['items']))->toBe(['Documents', 'Websites'])
+        ->and((string) $level['active']->getLabel())->toBe('Documents')
+        ->and($level['back'])->toBe('/admin/agents/7')
+        ->and($level['depth'])->toBe(3);
+});
+
+it('shows the record menu with the record as title, back to the list', function () {
+    [, $level] = resolveNav(agentTree(), '/admin/agents/7/playground');
+
+    expect($level['title'])->toBe('Support bot')
+        ->and(labels($level['items']))->toBe(['Overview', 'Playground', 'Knowledge', 'Settings'])
+        ->and((string) $level['active']->getLabel())->toBe('Playground')
+        ->and($level['back'])->toBe('/admin/agents');
+});
+
+it('drills into a URL-less group inside a record menu (re-review 2)', function () {
+    [, $level] = resolveNav(agentTree(), '/admin/agents/7/settings/general');
+
+    expect($level['title'])->toBe('Settings')
+        ->and(labels($level['items']))->toBe(['General', 'Advanced'])
+        ->and((string) $level['active']->getLabel())->toBe('General')
+        ->and($level['back'])->toBe('/admin/agents/7');
+});
+
+it('matches an item with the same URL as its record exactly only (re-review 3)', function () {
+    [, $level] = resolveNav(agentTree(), '/admin/agents/7');
+    expect((string) $level['active']->getLabel())->toBe('Overview');
+
+    [, $level] = resolveNav(agentTree(), '/admin/agents/7/whatever');
+    expect($level['title'])->toBe('Support bot')
+        ->and($level['active'])->toBeNull();
+});
+
+it('does not treat ignored keys or failing lookups as records (re-review 4)', function () {
+    $lookups = [];
+    $tree = [
+        NavItem::make('Agents')->url('/admin/agents')
+            ->ignoreRecordKeys(['create', 'import'])
+            ->resolveRecordUsing(function (string $key) use (&$lookups) {
+                $lookups[] = $key;
+
+                throw new QueryException('pgsql', 'select', [], new Exception('invalid input syntax for type bigint'));
+            })
+            ->record(fn ($agent) => [NavItem::make('Overview')->url('/admin/agents/1')]),
+    ];
+
+    foreach (['/admin/agents/import', '/admin/agents/create', '/admin/agents/abc'] as $path) {
+        [, $level] = resolveNav($tree, $path);
+        expect($level['parent'])->toBeNull();
+    }
+
+    expect($lookups)->toBe(['abc']);
+});
+
+it('looks up each record at most once per request', function () {
+    $lookups = 0;
+    $tree = [
+        NavItem::make('Agents')->url('/admin/agents')
+            ->resolveRecordUsing(function (string $key) use (&$lookups) {
+                $lookups++;
+
+                return 'Agent '.$key;
+            })
+            ->record(fn ($agent) => [NavItem::make('Overview')->url('/admin/agents/1')]),
+    ];
+
+    $r = new ActivePathResolver;
+    $r->resolve($tree, '/admin/agents/1', '/admin');
+    $r->resolve($tree, '/admin/agents/1/edit', '/admin');
+
+    expect($lookups)->toBe(1);
 });

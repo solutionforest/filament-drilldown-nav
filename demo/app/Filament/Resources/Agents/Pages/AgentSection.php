@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Filament\Resources\Sites\Pages;
+namespace App\Filament\Resources\Agents\Pages;
 
-use App\Filament\Resources\Sites\SiteResource;
+use App\Filament\Resources\Agents\AgentResource;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 
-/** Demo page for /sites/{site}/{section} (Pages, Media, ...). */
-class SiteSection extends Page
+/** Placeholder page for the agent's Playground, Websites, Settings → Advanced, ... */
+class AgentSection extends Page
 {
     use InteractsWithRecord;
 
-    protected static string $resource = SiteResource::class;
+    protected static string $resource = AgentResource::class;
 
-    protected string $view = 'filament.pages.site-section';
+    protected string $view = 'filament.pages.agent-section';
 
     public string $section = '';
 
