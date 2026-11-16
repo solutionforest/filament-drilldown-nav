@@ -3,8 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DemoPage;
-use App\Filament\Resources\Sites\SiteResource;
-use App\Models\Site;
+use App\Filament\Resources\Agents\AgentResource;
+use App\Filament\Resources\Agents\Documents\DocumentResource;
+use App\Models\Agent;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -33,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->spa((bool) env('DEMO_SPA', false))
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -41,12 +43,23 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(DrilldownNavPlugin::make()->items(fn () => [
                 NavItem::page(Dashboard::class),
 
-                // A Filament Resource. Inside one Site, the sidebar shows that Site's own menu.
-                NavItem::resource(SiteResource::class)->record(fn (Site $site) => [
-                    NavItem::make('Overview')->icon('heroicon-o-eye')->url(SiteResource::getUrl('view', ['record' => $site])),
-                    NavItem::make('Pages')->icon('heroicon-o-document-text')->url(SiteResource::getUrl('section', ['record' => $site, 'section' => 'pages'])),
-                    NavItem::make('Media')->icon('heroicon-o-photo')->url(SiteResource::getUrl('section', ['record' => $site, 'section' => 'media'])),
-                    NavItem::make('Edit')->icon('heroicon-o-pencil-square')->url(SiteResource::getUrl('edit', ['record' => $site])),
+                // Agents: a normal Filament table. Click an agent and the sidebar shows
+                // that agent's own menu; Knowledge and Settings open a sub menu.
+                NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [
+                    NavItem::make('Overview')->icon('heroicon-o-eye')
+                        ->url(AgentResource::getUrl('view', ['record' => $agent])),
+                    NavItem::make('Playground')->icon('heroicon-o-chat-bubble-left-right')
+                        ->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'playground'])),
+                    NavItem::make('Knowledge')->icon('heroicon-o-book-open')->children([
+                        // A nested resource, scoped to this agent.
+                        NavItem::resource(DocumentResource::class, ['agent' => $agent]),
+                        NavItem::make('Websites')->icon('heroicon-o-globe-alt')
+                            ->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'websites'])),
+                    ]),
+                    NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
+                        NavItem::make('General')->url(AgentResource::getUrl('edit', ['record' => $agent])),
+                        NavItem::make('Advanced')->url(AgentResource::getUrl('settings', ['record' => $agent, 'section' => 'advanced'])),
+                    ]),
                 ]),
 
                 // Static 4-level tree (custom pages / React pages are just URLs).

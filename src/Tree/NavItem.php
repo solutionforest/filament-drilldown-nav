@@ -8,6 +8,8 @@ use BackedEnum;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Route;
 
 class NavItem
 {
@@ -29,8 +31,11 @@ class NavItem
 
     protected ?Closure $recordTitle = null;
 
-    /** @var array<string, array{menu: array<int, NavItem>, title: string}|null> */
-    protected array $resolvedRecords = [];
+    /** @var array<int, string>|Closure */
+    protected array|Closure $ignoredRecordKeys = ['create'];
+
+    /** @var array<string, NavItem|null> record nodes, per record key, per request */
+    protected array $recordNodes = [];
 
     final public function __construct(protected string|Htmlable $label) {}
 
@@ -48,15 +53,51 @@ class NavItem
             ->visible(fn (): bool => $page::canAccess());
     }
 
-    /** A Filament Resource: label, icon, index URL and access come from the resource class. */
-    public static function resource(string $resource): static
+    /**
+     * A Filament Resource: label, icon, list URL and access come from the resource class.
+     * Pass URL parameters for a nested resource, e.g. `['agent' => $agent]`.
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    public static function resource(string $resource, array $parameters = []): static
     {
+        $url = $resource::getIndexUrl($parameters);
+
         return static::make($resource::getNavigationLabel())
             ->icon($resource::getNavigationIcon())
-            ->url($resource::getUrl('index'))
+            ->url($url)
             ->visible(fn (): bool => $resource::canViewAny())
+            ->ignoreRecordKeys(fn (): array => ['create', ...static::staticRouteSegments($url)])
             ->resolveRecordUsing(fn (string $key): ?Model => $resource::resolveRecordRouteBinding($key))
             ->recordTitleUsing(fn (Model $record): string => (string) $resource::getRecordTitle($record));
+    }
+
+    /**
+     * Fixed URL segments registered right below $url (e.g. "import" for /admin/agents/import),
+     * so such list-level pages are never mistaken for a record key.
+     *
+     * @return array<int, string>
+     */
+    protected static function staticRouteSegments(string $url): array
+    {
+        $base = ActivePathResolver::normalise($url);
+        $segments = [];
+
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            $uri = ActivePathResolver::normalise('/'.$route->uri());
+
+            if (! str_starts_with($uri, $base.'/')) {
+                continue;
+            }
+
+            $segment = explode('/', substr($uri, strlen($base) + 1))[0];
+
+            if ($segment !== '' && ! str_starts_with($segment, '{')) {
+                $segments[] = $segment;
+            }
+        }
+
+        return array_values(array_unique($segments));
     }
 
     public function url(?string $url): static
@@ -98,6 +139,18 @@ class NavItem
     public function record(Closure $menu): static
     {
         $this->recordMenu = $menu;
+
+        return $this;
+    }
+
+    /**
+     * URL segments after this item's URL that are pages, not record keys ("create" by default).
+     *
+     * @param  array<int, string>|Closure(): array<int, string>  $keys
+     */
+    public function ignoreRecordKeys(array|Closure $keys): static
+    {
+        $this->ignoredRecordKeys = $keys;
 
         return $this;
     }
@@ -180,11 +233,11 @@ class NavItem
     }
 
     /**
-     * Record menu for the record whose key follows this item's URL in $path, if any.
-     *
-     * @return array{menu: array<int, NavItem>, title: string}|null
+     * The node for the record whose key follows this item's URL in $path: its URL is
+     * this item's URL + key, its label the record title, its children the record menu.
+     * Null when there is no record menu, no key, an ignored key, or no such record.
      */
-    public function getRecordContext(string $path): ?array
+    public function getRecordNode(string $path): ?NavItem
     {
         if ($this->recordMenu === null || $this->url === null) {
             return null;
@@ -199,19 +252,41 @@ class NavItem
 
         $key = explode('/', substr($path, strlen($prefix)))[0];
 
-        if ($key === '' || $key === 'create') {
+        if ($key === '') {
             return null;
         }
 
-        if (! array_key_exists($key, $this->resolvedRecords)) {
-            $record = $this->recordResolver ? ($this->recordResolver)($key) : $key;
-
-            $this->resolvedRecords[$key] = $record === null ? null : [
-                'menu' => array_values(array_filter(($this->recordMenu)($record), fn (NavItem $n) => $n->isVisible())),
-                'title' => $this->recordTitle ? ($this->recordTitle)($record) : (string) $record,
-            ];
+        if (! array_key_exists($key, $this->recordNodes)) {
+            $this->recordNodes[$key] = $this->makeRecordNode($key, rtrim($this->url, '/').'/'.$key);
         }
 
-        return $this->resolvedRecords[$key];
+        return $this->recordNodes[$key];
+    }
+
+    protected function makeRecordNode(string $key, string $url): ?NavItem
+    {
+        if ($this->ignoredRecordKeys instanceof Closure) {
+            $this->ignoredRecordKeys = ($this->ignoredRecordKeys)();
+        }
+
+        if (in_array($key, $this->ignoredRecordKeys, true)) {
+            return null;
+        }
+
+        try {
+            $record = $this->recordResolver ? ($this->recordResolver)($key) : $key;
+        } catch (QueryException) {
+            return null; // e.g. a non-numeric key on an integer column in PostgreSQL
+        }
+
+        if ($record === null) {
+            return null;
+        }
+
+        $menu = $this->recordMenu;
+
+        return static::make($this->recordTitle ? ($this->recordTitle)($record) : (string) $record)
+            ->url($url)
+            ->children(fn (): array => $menu($record));
     }
 }

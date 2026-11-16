@@ -6,7 +6,7 @@
     $resolver = new ActivePathResolver;
     $tree = DrilldownNavPlugin::get()->getTree();
     $homeUrl = url($panel->getPath());
-    $resolved = $resolver->resolve($tree, '/' . request()->path(), '/' . $panel->getPath());
+    $resolved = $resolver->resolve($tree, '/' . \Filament\Support\original_request()->path(), '/' . $panel->getPath());
     $level = $resolver->level($tree, $resolved, $homeUrl);
     $spa = $panel->hasSpaMode();
 @endphp
