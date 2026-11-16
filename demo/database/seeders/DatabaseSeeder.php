@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $support->documents()->createMany([['title' => 'Refund policy'], ['title' => 'Shipping FAQ']]);
 
         Agent::create(['name' => 'Sales assistant']);
+        Agent::create(['name' => 'Onboarding guide']);
 
         User::factory()->create([
             'name' => 'Demo',

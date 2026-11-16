@@ -44,6 +44,8 @@
                 :active="$item === $level['active']"
                 :icon="$item->getIcon()"
                 :url="$item->getLinkUrl()"
+                :badge="$item->getBadge()"
+                :badge-color="$item->getBadgeColor()"
             >
                 {{ $item->getLabel() }}
                 @if ($item->hasChildren() || $item->hasRecordMenu())

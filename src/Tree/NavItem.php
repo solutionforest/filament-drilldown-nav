@@ -6,6 +6,7 @@ namespace SolutionForest\DrilldownNav\Tree;
 
 use BackedEnum;
 use Closure;
+use Filament\Navigation\NavigationItem;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -22,6 +23,12 @@ class NavItem
     protected string|BackedEnum|Htmlable|null $icon = null;
 
     protected ?string $url = null;
+
+    /** @var string|(Closure(): ?string)|null */
+    protected string|Closure|null $badge = null;
+
+    /** @var string|array<mixed>|(Closure(): (string|array<mixed>|null))|null */
+    protected string|array|Closure|null $badgeColor = null;
 
     protected bool|Closure $visible = true;
 
@@ -42,6 +49,19 @@ class NavItem
     public static function make(string|Htmlable $label): static
     {
         return new static($label);
+    }
+
+    /**
+     * Everything Filament would show in its own sidebar (`$navigationGroup`, `$navigationParentItem`,
+     * `$navigationSort`, badges, `shouldRegisterNavigation()`, access checks), as drill-down items.
+     * Mix it with hand-written items; use $filter to leave items out (return false).
+     *
+     * @param  (Closure(NavigationItem): bool)|null  $filter
+     * @return array<int, NavItem>
+     */
+    public static function fromFilamentNavigation(?Closure $filter = null): array
+    {
+        return NativeNavigation::items($filter);
     }
 
     /** A Filament Page: label, icon, URL and access come from the page class. */
@@ -155,7 +175,7 @@ class NavItem
         return $this;
     }
 
-    /** @param Closure(string): mixed $resolver turns the URL key into a record (null = not found) */
+    /** @param Closure(never): mixed $resolver turns the URL key into a record (null = not found) */
     public function resolveRecordUsing(Closure $resolver): static
     {
         $this->recordResolver = $resolver;
@@ -163,7 +183,7 @@ class NavItem
         return $this;
     }
 
-    /** @param Closure(mixed): string $title label of the record, shown above its menu */
+    /** @param Closure(never): string $title label of the record, shown above its menu */
     public function recordTitleUsing(Closure $title): static
     {
         $this->recordTitle = $title;
@@ -174,6 +194,37 @@ class NavItem
     public function getLabel(): string|Htmlable
     {
         return $this->label;
+    }
+
+    /** Plain-text label (HTML stripped when the label is Htmlable). */
+    public function getLabelText(): string
+    {
+        return $this->label instanceof Htmlable ? trim(strip_tags($this->label->toHtml())) : $this->label;
+    }
+
+    /**
+     * @param  string|(Closure(): ?string)|null  $badge
+     * @param  string|array<mixed>|(Closure(): (string|array<mixed>|null))|null  $color
+     */
+    public function badge(string|Closure|null $badge, string|array|Closure|null $color = null): static
+    {
+        $this->badge = $badge;
+        $this->badgeColor = $color;
+
+        return $this;
+    }
+
+    public function getBadge(): ?string
+    {
+        $badge = $this->badge instanceof Closure ? ($this->badge)() : $this->badge;
+
+        return $badge === null || $badge === '' ? null : $badge;
+    }
+
+    /** @return string|array<mixed>|null */
+    public function getBadgeColor(): string|array|null
+    {
+        return $this->badgeColor instanceof Closure ? ($this->badgeColor)() : $this->badgeColor;
     }
 
     public function getIcon(): string|BackedEnum|Htmlable|null
@@ -269,7 +320,9 @@ class NavItem
             $this->ignoredRecordKeys = ($this->ignoredRecordKeys)();
         }
 
-        if (in_array($key, $this->ignoredRecordKeys, true)) {
+        $ignored = $this->ignoredRecordKeys;
+
+        if (is_array($ignored) && in_array($key, $ignored, true)) {
             return null;
         }
 
@@ -284,6 +337,10 @@ class NavItem
         }
 
         $menu = $this->recordMenu;
+
+        if ($menu === null) {
+            return null;
+        }
 
         return static::make($this->recordTitle ? ($this->recordTitle)($record) : (string) $record)
             ->url($url)

@@ -7,7 +7,7 @@ on:
 
 jobs:
   package:
-    name: Package (Pest + Pint)
+    name: Package (Pest + Pint + PHPStan 9)
     # Self-hosted runner: never run code from fork pull requests.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/pint --test
+      - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - run: vendor/bin/pest
 
   demo:
