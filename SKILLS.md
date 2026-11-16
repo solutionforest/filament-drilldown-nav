@@ -1,6 +1,6 @@
 ---
 name: filament-drilldown-nav
-description: Add drill-down sidebar navigation to a Filament v5 panel — one level at a time, Back link, any depth, per-record menus (click an agent/site/customer and get that record's own menu), reusing existing Resources and Pages. Use when a Filament panel needs 3+ navigation levels, a menu per record, or a single left sidebar instead of a second sub-navigation.
+description: Add drill-down sidebar navigation to a Filament v5 panel — one level at a time, Back link, any depth, per-record menus (click an project/site/customer and get that record's own menu), reusing existing Resources and Pages. Use when a Filament panel needs 3+ navigation levels, a menu per record, or a single left sidebar instead of a second sub-navigation.
 ---
 
 # Skill: filament-drilldown-nav
@@ -9,7 +9,7 @@ Package: `solutionforest/filament-drilldown-nav` (Filament **v5**, PHP 8.3+). Fo
 
 ## When to use it
 
-- A record has its own area ("click an agent → Playground, Knowledge, Settings") and you want that menu **in the left sidebar**.
+- A record has its own area ("click an project → Tasks, Files, Settings") and you want that menu **in the left sidebar**.
 - Menus nest 3–4 levels deep.
 - You do **not** need it for two levels: native navigation groups, parent items and Clusters are enough.
 
@@ -26,7 +26,7 @@ use SolutionForest\DrilldownNav\Tree\NavItem;
 
 $panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
     NavItem::page(Dashboard::class),
-    NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [ /* record menu */ ]),
+    NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [ /* record menu */ ]),
     ...NavItem::fromFilamentNavigation(),   // everything else Filament would show
 ]));
 ```
@@ -57,11 +57,11 @@ NavItem::make('Docs')->url('/admin/docs')->children([
 
 **Menu per record** — the URL segment after the resource URL is the record key.
 ```php
-NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [
-    NavItem::make('Overview')->url(AgentResource::getUrl('view', ['record' => $agent])),
-    NavItem::make('Knowledge')->children([
-        NavItem::resource(DocumentResource::class, ['agent' => $agent]), // nested resource
-        NavItem::make('Websites')->url(...),
+NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [
+    NavItem::make('Overview')->url(ProjectResource::getUrl('view', ['record' => $project])),
+    NavItem::make('Files')->children([
+        NavItem::resource(DocumentResource::class, ['project' => $project]), // nested resource
+        NavItem::make('Links')->url(...),
     ]),
 ]);
 ```
@@ -74,7 +74,7 @@ For a non-resource item use `->resolveRecordUsing(fn (string $key) => ...)` and 
 
 ## Rules of thumb
 
-- **Record menu URLs must live under the resource's URL** (`/admin/agents/{record}/...`). Register extra pages on the resource (`'section' => AgentSection::route('/{record}/{section}')`, after `edit`) and link to them with `Resource::getUrl()`.
+- **Record menu URLs must live under the resource's URL** (`/admin/projects/{record}/...`). Register extra pages on the resource (`'section' => ProjectSection::route('/{record}/{section}')`, after `edit`) and link to them with `Resource::getUrl()`.
 - The sidebar level is computed from the **request URL** on every request: no JS state, so refresh and deep links work.
 - Keep closures cheap: they run once per request, only for items on the current path.
 - Hide items with `->visible(fn () => ...)` or the page/resource's own `canAccess()`; empty groups disappear.

@@ -30,18 +30,18 @@ class NativeNavigationTest extends TestCase
         $text = $this->sidebar($this->actingAs($this->admin())->get('/admin'));
 
         $this->assertStringContainsString('Dashboard', $text);
-        $this->assertStringContainsString('Agents', $text);
+        $this->assertStringContainsString('Projects', $text);
         $this->assertStringContainsString('Reports', $text); // native $navigationGroup
         $this->assertStringContainsString('Docs', $text);
         $this->assertStringNotContainsString('Billing', $text); // inside the group, not at the top
     }
 
-    public function test_dashboard_and_agents_are_not_listed_twice(): void
+    public function test_dashboard_and_projects_are_not_listed_twice(): void
     {
         $text = $this->sidebar($this->actingAs($this->admin())->get('/admin'));
 
         $this->assertSame(1, substr_count($text, 'Dashboard'));
-        $this->assertSame(1, substr_count($text, 'Agents'));
+        $this->assertSame(1, substr_count($text, 'Projects'));
     }
 
     public function test_group_opens_its_native_items_with_badge_and_sort_order(): void
@@ -53,9 +53,9 @@ class NativeNavigationTest extends TestCase
 
     public function test_native_parent_item_opens_a_sub_level(): void
     {
-        $text = $this->sidebar($this->actingAs($this->admin())->get('/admin/reports/usage/by-agent'));
+        $text = $this->sidebar($this->actingAs($this->admin())->get('/admin/reports/usage/by-project'));
 
-        $this->assertMatchesRegularExpression('/^Back Usage By agent$/', $text);
+        $this->assertMatchesRegularExpression('/^Back Usage By project$/', $text);
     }
 
     public function test_native_access_check_hides_the_item_for_other_users(): void

@@ -1,8 +1,8 @@
 # Filament Drilldown Nav
 
-Drill-down sidebar navigation for **Filament v5**: one left sidebar, **one level at a time**, a **Back** link, any depth — and a **menu per record** (click an agent, get that agent's own menu).
+Drill-down sidebar navigation for **Filament v5**: one left sidebar, **one level at a time**, a **Back** link, any depth — and a **menu per record** (click an project, get that project's own menu).
 
-![Journey: main menu, agents table, one agent, knowledge sub menu](docs/screenshots/00-journey.png)
+![Journey: main menu, projects table, one project, files sub menu](docs/screenshots/00-journey.png)
 
 ## Why
 
@@ -10,7 +10,7 @@ Filament's sidebar nests everything in place, and a cluster's or page's sub-navi
 
 | You want | Filament alone | This plugin |
 |---|---|---|
-| A menu for one record (agent, site, customer …) | build a sub-navigation per page | `->record(fn ($record) => [...])` |
+| A menu for one record (project, site, customer …) | build a sub-navigation per page | `->record(fn ($record) => [...])` |
 | 3–4 levels in the left sidebar | groups + one parent level | any depth |
 | One menu location | sidebar **and** sub-navigation | the sidebar |
 | Keep `$navigationGroup`, `$navigationParentItem`, badges, `canAccess()` | — | `NavItem::fromFilamentNavigation()` |
@@ -55,15 +55,15 @@ use SolutionForest\DrilldownNav\Tree\NavItem;
 $panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
     NavItem::page(Dashboard::class),                       // label, icon, URL, access from the class
 
-    NavItem::resource(AgentResource::class)                // list = a normal Filament table
-        ->record(fn (Agent $agent) => [                    // menu shown INSIDE one agent
+    NavItem::resource(ProjectResource::class)                // list = a normal Filament table
+        ->record(fn (Project $project) => [                    // menu shown INSIDE one project
             NavItem::make('Overview')->icon('heroicon-o-eye')
-                ->url(AgentResource::getUrl('view', ['record' => $agent])),
-            NavItem::make('Playground')->icon('heroicon-o-chat-bubble-left-right')
-                ->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'playground'])),
-            NavItem::make('Knowledge')->icon('heroicon-o-book-open')->children([   // a sub menu
-                NavItem::resource(DocumentResource::class, ['agent' => $agent]),   // nested resource
-                NavItem::make('Websites')->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'websites'])),
+                ->url(ProjectResource::getUrl('view', ['record' => $project])),
+            NavItem::make('Tasks')->icon('heroicon-o-clipboard-document-check')
+                ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'tasks'])),
+            NavItem::make('Files')->icon('heroicon-o-book-open')->children([   // a sub menu
+                NavItem::resource(DocumentResource::class, ['project' => $project]),   // nested resource
+                NavItem::make('Links')->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'links'])),
             ]),
         ]),
 
@@ -104,21 +104,21 @@ An item with children opens its own level when you visit its URL. An item **with
 `record()` is the feature this plugin exists for. When the URL is `<list URL>/<key>/…` (and the key is not `create`), the key is resolved with the resource's own route binding and the sidebar shows your menu, titled with the record's title. Back returns to the list.
 
 ```php
-NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [ /* any NavItems, any depth */ ]);
+NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [ /* any NavItems, any depth */ ]);
 ```
 
-| One agent's menu | Sub menu inside it |
+| One project's menu | Sub menu inside it |
 |---|---|
-| ![agent menu](docs/screenshots/03-agent-menu.png) | ![knowledge sub menu](docs/screenshots/04-knowledge-sub-menu.png) |
+| ![project menu](docs/screenshots/03-project-menu.png) | ![files sub menu](docs/screenshots/04-files-sub-menu.png) |
 
-Record-menu URLs must live under the resource's own URL (`/admin/agents/{record}/…`), because that is how the plugin knows you are inside the record. Register extra pages on the resource, **after** `edit`:
+Record-menu URLs must live under the resource's own URL (`/admin/projects/{record}/…`), because that is how the plugin knows you are inside the record. Register extra pages on the resource, **after** `edit`:
 
 ```php
-'edit' => EditAgent::route('/{record}/edit'),
-'section' => AgentSection::route('/{record}/{section}'),
+'edit' => EditProject::route('/{record}/edit'),
+'section' => ProjectSection::route('/{record}/{section}'),
 ```
 
-For a non-resource item use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`. Fixed pages below the list URL (like `/agents/import`) are never mistaken for a record: they are excluded automatically for `resource()`, or with `->ignoreRecordKeys(['create', 'import'])`.
+For a non-resource item use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`. Fixed pages below the list URL (like `/projects/import`) are never mistaken for a record: they are excluded automatically for `resource()`, or with `->ignoreRecordKeys(['create', 'import'])`.
 
 ### 4. Reuse Filament's own navigation
 
@@ -147,10 +147,10 @@ Empty groups disappear. Closures run once per request, and only for items on the
 
 | Area | What it shows |
 |---|---|
-| **Agents** (Resource) | a table; click a row → that agent's own menu (Overview, Playground, Knowledge, Settings) |
-| Knowledge → Documents | a **nested resource** scoped to the agent (own table, create, edit) |
+| **Projects** (Resource) | a table; click a row → that project's own menu (Overview, Tasks, Files, Settings) |
+| Files → Documents | a **nested resource** scoped to the project (own table, create, edit) |
 | Settings | a group with sub menus inside a record menu |
-| **Reports** | a group imported from **native Filament navigation**: sort order, group icon, badge, a native *parent item* (Usage → By agent) and a permission-gated page (Billing) |
+| **Reports** | a group imported from **native Filament navigation**: sort order, group icon, badge, a native *parent item* (Usage → By project) and a permission-gated page (Billing) |
 | **Docs** | a static 4-level tree (custom pages / React pages are just URLs) |
 | **Settings** | a pure group (no URL of its own) |
 
@@ -167,13 +167,13 @@ Log in at `/admin/login` with `demo@example.com` / `password` (local demo data o
 <details>
 <summary>More screenshots</summary>
 
-| Agents table | Nested resource inside an agent |
+| Projects table | Nested resource inside an project |
 |---|---|
-| ![agents](docs/screenshots/02-agents-list.png) | ![document edit](docs/screenshots/05-document-edit.png) |
+| ![projects](docs/screenshots/02-projects-list.png) | ![document edit](docs/screenshots/05-document-edit.png) |
 
-| Native parent item (Usage → By agent) | Dark mode |
+| Native parent item (Usage → By project) | Dark mode |
 |---|---|
-| ![by agent](docs/screenshots/07-reports-parent-item.png) | ![dark](docs/screenshots/09-dark-mode.png) |
+| ![by project](docs/screenshots/07-reports-parent-item.png) | ![dark](docs/screenshots/09-dark-mode.png) |
 
 | Mobile drawer |
 |---|

@@ -3,9 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DemoPage;
-use App\Filament\Resources\Agents\AgentResource;
-use App\Filament\Resources\Agents\Documents\DocumentResource;
-use App\Models\Agent;
+use App\Filament\Resources\Projects\Documents\DocumentResource;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\Project;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -48,22 +48,22 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(DrilldownNavPlugin::make()->items(fn () => [
                 NavItem::page(Dashboard::class),
 
-                // Agents: a normal Filament table. Click an agent and the sidebar shows
-                // that agent's own menu; Knowledge and Settings open a sub menu.
-                NavItem::resource(AgentResource::class)->record(fn (Agent $agent) => [
+                // Projects: a normal Filament table. Click an project and the sidebar shows
+                // that project's own menu; Files and Settings open a sub menu.
+                NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [
                     NavItem::make('Overview')->icon('heroicon-o-eye')
-                        ->url(AgentResource::getUrl('view', ['record' => $agent])),
-                    NavItem::make('Playground')->icon('heroicon-o-chat-bubble-left-right')
-                        ->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'playground'])),
-                    NavItem::make('Knowledge')->icon('heroicon-o-book-open')->children([
-                        // A nested resource, scoped to this agent.
-                        NavItem::resource(DocumentResource::class, ['agent' => $agent]),
-                        NavItem::make('Websites')->icon('heroicon-o-globe-alt')
-                            ->url(AgentResource::getUrl('section', ['record' => $agent, 'section' => 'websites'])),
+                        ->url(ProjectResource::getUrl('view', ['record' => $project])),
+                    NavItem::make('Tasks')->icon('heroicon-o-clipboard-document-check')
+                        ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'tasks'])),
+                    NavItem::make('Files')->icon('heroicon-o-book-open')->children([
+                        // A nested resource, scoped to this project.
+                        NavItem::resource(DocumentResource::class, ['project' => $project]),
+                        NavItem::make('Links')->icon('heroicon-o-globe-alt')
+                            ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'links'])),
                     ]),
                     NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
-                        NavItem::make('General')->url(AgentResource::getUrl('edit', ['record' => $agent])),
-                        NavItem::make('Advanced')->url(AgentResource::getUrl('settings', ['record' => $agent, 'section' => 'advanced'])),
+                        NavItem::make('General')->url(ProjectResource::getUrl('edit', ['record' => $project])),
+                        NavItem::make('Advanced')->url(ProjectResource::getUrl('settings', ['record' => $project, 'section' => 'advanced'])),
                     ]),
                 ]),
 
@@ -72,7 +72,7 @@ class AdminPanelProvider extends PanelProvider
                 // listed again (the Reports group). Items handled by hand above are filtered out.
                 ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => ! in_array($item->getUrl(), [
                     Dashboard::getUrl(),
-                    AgentResource::getUrl('index'),
+                    ProjectResource::getUrl('index'),
                 ], true)),
 
                 // Static 4-level tree (custom pages / React pages are just URLs).

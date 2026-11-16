@@ -9,8 +9,8 @@ class Document extends Model
 {
     protected $fillable = ['title'];
 
-    public function agent(): BelongsTo
+    public function project(): BelongsTo
     {
-        return $this->belongsTo(Agent::class);
+        return $this->belongsTo(Project::class);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Agent;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -39,53 +39,53 @@ class DrilldownNavTest extends TestCase
             ->assertDontSee('Settings');
     }
 
-    private function agent(): Agent
+    private function project(): Project
     {
-        $agent = Agent::create(['name' => 'Support bot']);
-        $agent->documents()->create(['title' => 'Refund policy']);
+        $project = Project::create(['name' => 'Website redesign']);
+        $project->documents()->create(['title' => 'Refund policy']);
 
-        return $agent;
+        return $project;
     }
 
-    public function test_clicking_an_agent_shows_its_own_menu(): void
+    public function test_clicking_an_project_shows_its_own_menu(): void
     {
-        $agent = $this->agent();
+        $project = $this->project();
 
-        foreach (['', '/playground'] as $suffix) {
-            $this->get_("/admin/agents/{$agent->id}{$suffix}")->assertOk()
-                ->assertSeeInOrder(['fi-drilldown-title', 'Support bot', 'Overview', 'Playground', 'Knowledge', 'Settings'], false)
-                ->assertSee('href="'.url('/admin/agents').'"', false) // Back to the list
+        foreach (['', '/tasks'] as $suffix) {
+            $this->get_("/admin/projects/{$project->id}{$suffix}")->assertOk()
+                ->assertSeeInOrder(['fi-drilldown-title', 'Website redesign', 'Overview', 'Tasks', 'Files', 'Settings'], false)
+                ->assertSee('href="'.url('/admin/projects').'"', false) // Back to the list
                 ->assertDontSee('Docs');
         }
     }
 
-    public function test_knowledge_sub_menu_inside_an_agent(): void
+    public function test_files_sub_menu_inside_an_project(): void
     {
-        $agent = $this->agent();
-        $doc = $agent->documents()->first();
+        $project = $this->project();
+        $doc = $project->documents()->first();
 
-        foreach (["/admin/agents/{$agent->id}/documents", "/admin/agents/{$agent->id}/documents/{$doc->id}/edit", "/admin/agents/{$agent->id}/websites"] as $url) {
+        foreach (["/admin/projects/{$project->id}/documents", "/admin/projects/{$project->id}/documents/{$doc->id}/edit", "/admin/projects/{$project->id}/links"] as $url) {
             $this->get_($url)->assertOk()
-                ->assertSeeInOrder(['fi-drilldown-title', 'Knowledge', 'Documents', 'Websites'], false)
-                ->assertSee('href="'.url("/admin/agents/{$agent->id}").'"', false) // Back to the agent menu
-                ->assertDontSee('Playground');
+                ->assertSeeInOrder(['fi-drilldown-title', 'Files', 'Documents', 'Links'], false)
+                ->assertSee('href="'.url("/admin/projects/{$project->id}").'"', false) // Back to the project menu
+                ->assertDontSee('Tasks');
         }
     }
 
-    public function test_settings_group_inside_an_agent(): void
+    public function test_settings_group_inside_an_project(): void
     {
-        $agent = $this->agent();
+        $project = $this->project();
 
         foreach (['/settings/general', '/settings/advanced'] as $suffix) {
-            $this->get_("/admin/agents/{$agent->id}{$suffix}")->assertOk()
+            $this->get_("/admin/projects/{$project->id}{$suffix}")->assertOk()
                 ->assertSeeInOrder(['fi-drilldown-title', 'Settings', 'General', 'Advanced'], false)
-                ->assertDontSee('Playground');
+                ->assertDontSee('Tasks');
         }
     }
 
-    public function test_agent_list_and_create_stay_on_root_level(): void
+    public function test_project_list_and_create_stay_on_root_level(): void
     {
-        foreach (['/admin/agents', '/admin/agents/create'] as $url) {
+        foreach (['/admin/projects', '/admin/projects/create'] as $url) {
             $this->get_($url)->assertOk()->assertSee('Docs')->assertDontSee('class="fi-drilldown-back"', false);
         }
     }
