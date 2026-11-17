@@ -52,106 +52,112 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make('Reports')->icon('heroicon-o-chart-pie'),
             ])
-            ->plugin(DrilldownNavPlugin::make()->items(fn () => [
-                NavItem::page(Dashboard::class),
+            ->plugin(DrilldownNavPlugin::make()
+                ->searchable(minItems: 6)   // filter box once a level lists 6+ items
+                ->recent(5)                 // "Recent" pages at the top level
+                ->pinnable()                // "Pin this page" + a "Pinned" list
+                ->items(fn () => [
+                    NavItem::page(Dashboard::class),
 
-                // Clients (staff only). Click a client: its own menu. "Projects" opens a level listing
-                // that client's projects; "Invoices" is a nested resource with an unpaid-count badge.
-                NavItem::resource(ClientResource::class)->record(fn (Client $client) => [
-                    NavItem::make('Overview')->icon('heroicon-o-eye')
-                        ->url(ClientResource::getUrl('view', ['record' => $client])),
-                    NavItem::make('Projects')->icon('heroicon-o-rectangle-stack')
-                        ->url(ClientResource::getUrl('projects', ['record' => $client]))
-                        ->badge(fn (): string => (string) $client->projects()->count())
-                        ->children(fn (): array => $client->projects()->latest('due_on')->limit(8)->get()
-                            ->map(fn (Project $project): NavItem => NavItem::make($project->name)
-                                ->url(ProjectResource::getUrl('view', ['record' => $project])))
-                            ->all()),
-                    NavItem::resource(InvoiceResource::class, ['client' => $client])
-                        ->icon('heroicon-o-receipt-percent')
-                        ->badge(fn (): string => (string) $client->invoices()->whereIn('status', ['sent', 'overdue'])->count(), 'warning'),
-                    NavItem::make('Contacts')->icon('heroicon-o-users')
-                        ->url(ClientResource::getUrl('section', ['record' => $client, 'section' => 'contacts'])),
-                ]),
-
-                // Projects: a normal Filament table. Click a project: its own menu (5 levels deep:
-                // Projects > Project > Tasks > Task > Comments). Client logins only see their own projects,
-                // and never Time or Settings.
-                NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [
-                    NavItem::make('Overview')->icon('heroicon-o-eye')
-                        ->url(ProjectResource::getUrl('view', ['record' => $project])),
-                    NavItem::resource(TaskResource::class, ['project' => $project])
-                        ->badge(fn (): string => (string) $project->tasks()->where('status', '!=', 'done')->count())
-                        ->record(fn (Task $task) => [
-                            NavItem::make('Details')->icon('heroicon-o-document-text')
-                                ->url(TaskResource::getUrl('edit', ['project' => $project, 'record' => $task])),
-                            NavItem::make('Comments')->icon('heroicon-o-chat-bubble-left-right')
-                                ->url(TaskResource::getUrl('section', ['project' => $project, 'record' => $task, 'section' => 'comments'])),
-                            NavItem::make('History')->icon('heroicon-o-clock')
-                                ->url(TaskResource::getUrl('section', ['project' => $project, 'record' => $task, 'section' => 'history'])),
-                        ]),
-                    NavItem::make('Time')->icon('heroicon-o-clock')
-                        ->url(ProjectResource::getUrl('time', ['record' => $project]))
-                        ->visible(fn (): bool => ! auth()->user()?->isClient()),
-                    NavItem::make('Files')->icon('heroicon-o-book-open')->children([
-                        // A nested resource, scoped to this project.
-                        NavItem::resource(DocumentResource::class, ['project' => $project]),
-                        NavItem::make('Links')->icon('heroicon-o-globe-alt')
-                            ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'links'])),
+                    // Clients (staff only). Click a client: its own menu. "Projects" opens a level listing
+                    // that client's projects; "Invoices" is a nested resource with an unpaid-count badge.
+                    NavItem::resource(ClientResource::class)->record(fn (Client $client) => [
+                        NavItem::make('Overview')->icon('heroicon-o-eye')
+                            ->url(ClientResource::getUrl('view', ['record' => $client])),
+                        NavItem::make('Projects')->icon('heroicon-o-rectangle-stack')
+                            ->url(ClientResource::getUrl('projects', ['record' => $client]))
+                            ->badge(fn (): string => (string) $client->projects()->count())
+                            ->children(fn (): array => $client->projects()->latest('due_on')->limit(40)->get()
+                                ->map(fn (Project $project): NavItem => NavItem::make($project->name)
+                                    ->url(ProjectResource::getUrl('view', ['record' => $project])))
+                                ->all())
+                            // long lists stay short: first 5, then "View all (N)"
+                            ->limit(5, ClientResource::getUrl('projects', ['record' => $client])),
+                        NavItem::resource(InvoiceResource::class, ['client' => $client])
+                            ->icon('heroicon-o-receipt-percent')
+                            ->badge(fn (): string => (string) $client->invoices()->whereIn('status', ['sent', 'overdue'])->count(), 'warning'),
+                        NavItem::make('Contacts')->icon('heroicon-o-users')
+                            ->url(ClientResource::getUrl('section', ['record' => $client, 'section' => 'contacts'])),
                     ]),
+
+                    // Projects: a normal Filament table. Click a project: its own menu (5 levels deep:
+                    // Projects > Project > Tasks > Task > Comments). Client logins only see their own projects,
+                    // and never Time or Settings.
+                    NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [
+                        NavItem::make('Overview')->icon('heroicon-o-eye')
+                            ->url(ProjectResource::getUrl('view', ['record' => $project])),
+                        NavItem::resource(TaskResource::class, ['project' => $project])
+                            ->badge(fn (): string => (string) $project->tasks()->where('status', '!=', 'done')->count())
+                            ->record(fn (Task $task) => [
+                                NavItem::make('Details')->icon('heroicon-o-document-text')
+                                    ->url(TaskResource::getUrl('edit', ['project' => $project, 'record' => $task])),
+                                NavItem::make('Comments')->icon('heroicon-o-chat-bubble-left-right')
+                                    ->url(TaskResource::getUrl('section', ['project' => $project, 'record' => $task, 'section' => 'comments'])),
+                                NavItem::make('History')->icon('heroicon-o-clock')
+                                    ->url(TaskResource::getUrl('section', ['project' => $project, 'record' => $task, 'section' => 'history'])),
+                            ]),
+                        NavItem::make('Time')->icon('heroicon-o-clock')
+                            ->url(ProjectResource::getUrl('time', ['record' => $project]))
+                            ->visible(fn (): bool => ! auth()->user()?->isClient()),
+                        NavItem::make('Files')->icon('heroicon-o-book-open')->children([
+                            // A nested resource, scoped to this project.
+                            NavItem::resource(DocumentResource::class, ['project' => $project]),
+                            NavItem::make('Links')->icon('heroicon-o-globe-alt')
+                                ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'links'])),
+                        ]),
+                        NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
+                            NavItem::make('General')->url(ProjectResource::getUrl('edit', ['record' => $project])),
+                            NavItem::make('Advanced')->url(ProjectResource::getUrl('settings', ['record' => $project, 'section' => 'advanced'])),
+                        ])->visible(fn (): bool => ! auth()->user()?->isClient()),
+                    ]),
+
+                    // Reuse Filament's own navigation: pages/resources that set $navigationGroup,
+                    // $navigationParentItem, badges or canAccess() show up here without being
+                    // listed again (the Reports group). Items handled by hand above are filtered out.
+                    ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => ! in_array($item->getUrl(), [
+                        Dashboard::getUrl(),
+                        ProjectResource::getUrl('index'),
+                        ClientResource::getUrl('index'),
+                    ], true)),
+
+                    // Modern, click-to-expand sections: children open in place with a guide line
+                    // (->inline()), can nest, remember their state, and sit under a heading + divider.
+                    NavItem::heading('Workspace')->divider(),
+                    NavItem::make('Team')->icon('heroicon-o-users')->inline()->defaultExpanded()->children([
+                        NavItem::make('Members')->url('/admin/demo/team/members')->badge('8'),
+                        NavItem::make('Roles')->url('/admin/demo/team/roles'),
+                        NavItem::make('Invitations')->url('/admin/demo/team/invitations')->badge('2', 'warning'),
+                    ]),
+                    NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->children([
+                        NavItem::make('Overview')->url('/admin/demo/subscription/overview'),
+                        NavItem::make('Invoices')->inline()->children([
+                            NavItem::make('Paid')->url('/admin/demo/subscription/invoices/paid'),
+                            NavItem::make('Unpaid')->url('/admin/demo/subscription/invoices/unpaid')->badge('3', 'danger'),
+                        ]),
+                        NavItem::make('Plans')->url('/admin/demo/subscription/plans'),
+                    ]),
+
+                    // Visible to the demo admin only (evaluated per request, per user).
+                    NavItem::make('Audit log')->icon('heroicon-o-shield-check')->url('/admin/demo/audit')
+                        ->visible(fn (): bool => auth()->user()?->email === 'demo@example.com'),
+
+                    // Static 4-level tree (custom pages / React pages are just URLs).
+                    NavItem::make('Docs')->icon('heroicon-o-book-open')->url('/admin/demo/docs')->children([
+                        NavItem::make('Guides')->url('/admin/demo/docs/guides')->children([
+                            NavItem::make('Getting started')->url('/admin/demo/docs/guides/start')->children([
+                                NavItem::make('Install')->url('/admin/demo/docs/guides/start/install'),
+                                NavItem::make('Configure')->url('/admin/demo/docs/guides/start/configure'),
+                            ]),
+                        ]),
+                        NavItem::make('API')->url('/admin/demo/docs/api'),
+                    ]),
+
+                    // A pure group: no URL of its own, clicking it opens its first child.
                     NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
-                        NavItem::make('General')->url(ProjectResource::getUrl('edit', ['record' => $project])),
-                        NavItem::make('Advanced')->url(ProjectResource::getUrl('settings', ['record' => $project, 'section' => 'advanced'])),
-                    ])->visible(fn (): bool => ! auth()->user()?->isClient()),
-                ]),
-
-                // Reuse Filament's own navigation: pages/resources that set $navigationGroup,
-                // $navigationParentItem, badges or canAccess() show up here without being
-                // listed again (the Reports group). Items handled by hand above are filtered out.
-                ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => ! in_array($item->getUrl(), [
-                    Dashboard::getUrl(),
-                    ProjectResource::getUrl('index'),
-                    ClientResource::getUrl('index'),
-                ], true)),
-
-                // Modern, click-to-expand sections: children open in place with a guide line
-                // (->inline()), can nest, remember their state, and sit under a heading + divider.
-                NavItem::heading('Workspace')->divider(),
-                NavItem::make('Team')->icon('heroicon-o-users')->inline()->defaultExpanded()->children([
-                    NavItem::make('Members')->url('/admin/demo/team/members')->badge('8'),
-                    NavItem::make('Roles')->url('/admin/demo/team/roles'),
-                    NavItem::make('Invitations')->url('/admin/demo/team/invitations')->badge('2', 'warning'),
-                ]),
-                NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->children([
-                    NavItem::make('Overview')->url('/admin/demo/subscription/overview'),
-                    NavItem::make('Invoices')->inline()->children([
-                        NavItem::make('Paid')->url('/admin/demo/subscription/invoices/paid'),
-                        NavItem::make('Unpaid')->url('/admin/demo/subscription/invoices/unpaid')->badge('3', 'danger'),
+                        NavItem::make('General')->url('/admin/demo/settings/general'),
+                        NavItem::make('Team')->url('/admin/demo/settings/team'),
                     ]),
-                    NavItem::make('Plans')->url('/admin/demo/subscription/plans'),
-                ]),
-
-                // Visible to the demo admin only (evaluated per request, per user).
-                NavItem::make('Audit log')->icon('heroicon-o-shield-check')->url('/admin/demo/audit')
-                    ->visible(fn (): bool => auth()->user()?->email === 'demo@example.com'),
-
-                // Static 4-level tree (custom pages / React pages are just URLs).
-                NavItem::make('Docs')->icon('heroicon-o-book-open')->url('/admin/demo/docs')->children([
-                    NavItem::make('Guides')->url('/admin/demo/docs/guides')->children([
-                        NavItem::make('Getting started')->url('/admin/demo/docs/guides/start')->children([
-                            NavItem::make('Install')->url('/admin/demo/docs/guides/start/install'),
-                            NavItem::make('Configure')->url('/admin/demo/docs/guides/start/configure'),
-                        ]),
-                    ]),
-                    NavItem::make('API')->url('/admin/demo/docs/api'),
-                ]),
-
-                // A pure group: no URL of its own, clicking it opens its first child.
-                NavItem::make('Settings')->icon('heroicon-o-cog-6-tooth')->children([
-                    NavItem::make('General')->url('/admin/demo/settings/general'),
-                    NavItem::make('Team')->url('/admin/demo/settings/team'),
-                ]),
-            ]))
+                ]))
             ->pages([
                 Dashboard::class,
                 DemoPage::class,

@@ -22,6 +22,14 @@ class DrilldownNavPlugin implements Plugin
 
     protected ChildDisplay $childDisplay = ChildDisplay::Drilldown;
 
+    protected bool $searchable = false;
+
+    protected int $searchMinItems = 0;
+
+    protected int $recentLimit = 0;
+
+    protected bool $pinnable = false;
+
     protected string $panelId = '';
 
     protected ?Panel $panel = null;
@@ -65,6 +73,60 @@ class DrilldownNavPlugin implements Plugin
         $this->childDisplay = $display;
 
         return $this;
+    }
+
+    /**
+     * A search box above the menu that filters the items already on screen (the current level and
+     * inline sections) as you type. With $minItems, it appears only when at least that many items are listed.
+     */
+    public function searchable(bool $searchable = true, int $minItems = 0): static
+    {
+        $this->searchable = $searchable;
+        $this->searchMinItems = $minItems;
+
+        return $this;
+    }
+
+    /** A "Recent" list of the last $limit pages visited (per browser and user) at the top level. 0 turns it off. */
+    public function recent(int $limit = 5): static
+    {
+        $this->recentLimit = max(0, $limit);
+
+        return $this;
+    }
+
+    /** A "Pin this page" toggle, and a "Pinned" list at the top level (per browser and user). */
+    public function pinnable(bool $pinnable = true): static
+    {
+        $this->pinnable = $pinnable;
+
+        return $this;
+    }
+
+    public function isSearchable(): bool
+    {
+        return $this->searchable;
+    }
+
+    public function getSearchMinItems(): int
+    {
+        return $this->searchMinItems;
+    }
+
+    public function getRecentLimit(): int
+    {
+        return $this->recentLimit;
+    }
+
+    public function isPinnable(): bool
+    {
+        return $this->pinnable;
+    }
+
+    /** Browser-storage key prefix, so two panels or two users in one browser never share lists. */
+    public function getStorageKey(): string
+    {
+        return 'fi-drilldown:'.$this->panelId.':'.(auth()->id() ?? 'guest');
     }
 
     public function getChildDisplay(): ChildDisplay

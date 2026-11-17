@@ -21,6 +21,8 @@ use UnitEnum;
  * `$navigationParentItem`, `$navigationSort`, `$navigationBadge`, `shouldRegisterNavigation()`,
  * `canAccess()`, `NavigationItem::make()` ...) into drill-down items, so existing
  * Resources and Pages keep working without being listed again.
+ *
+ * @internal Not part of the public API: it may change in any release. See docs/api-stability.md.
  */
 class NativeNavigation
 {

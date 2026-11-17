@@ -182,6 +182,28 @@ What you get without extra code: the section containing the current page is **op
 
 > Tip: give top-level items an icon. In the collapsed sidebar, an item without an icon has nothing to show.
 
+## Large menus: search, recent, pinned, long lists
+
+```php
+DrilldownNavPlugin::make()
+    ->searchable(minItems: 6)   // a filter box once a level lists 6+ items
+    ->recent(5)                 // the last 5 pages visited, at the top level
+    ->pinnable()                // "Pin this page" + a Pinned list
+    ->items(fn () => [
+        NavItem::make('Projects')->url('/admin/clients/1/projects')
+            ->children(fn () => $client->projects()->limit(40)->get()->map(fn ($p) => NavItem::make($p->name)->url(…))->all())
+            ->limit(5, '/admin/clients/1/projects'),   // show 5, then "View all (N)"
+    ]);
+```
+
+- **Search** filters what is already on screen (the current level and inline sections) as you type: a section stays visible when a child matches, headings hide, `Esc` clears, and a note appears when nothing matches. It does **not** search levels you have not opened (those pages are separate; use Filament's global search for that).
+- **Recent / Pinned** are stored in the browser per panel and per user, show at the top level, and remember the page's trail (e.g. "Website redesign › Tasks"). The pin toggle appears on every level.
+- **`->limit($max, $moreUrl)`** shortens the display of a long child list. All children still take part in URL matching and the child containing the current page is never hidden, so the sidebar stays correct. Keep your own query small (`limit()` on the query): it shortens the display, it does not avoid loading the rows.
+
+| Search | Pinned + Recent |
+|---|---|
+| ![search](docs/screenshots/40-search.png) | ![pinned and recent](docs/screenshots/42-pinned-recent.png) |
+
 ## Multi-panel, Octane, tenants, languages
 
 - **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
@@ -263,12 +285,16 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 - **PHPStan level 9** on `src/`, with no ignores.
 - **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. In addition, `demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a **real one-worker Octane server** and runs 21 checks (two users and three panels alternating over three rounds, a record renamed between requests); CI runs it for all three servers. The script was checked by mutation: making the plugin's request state outlive the request makes it fail.
 - **Languages:** every shipped language is tested for rendering and for having the same keys; Arabic is also checked for `dir="rtl"` and in a browser.
+- **Search, recent, pinned, limit:** markup, per-user storage keys, translations, and the limit logic are tested; the browser behaviour (typing, filtering, Esc, pinning, clearing, reload) was run in a real browser.
 - **Modern navigation:** expand/collapse state, nesting, headings, dividers, chevrons, the collapsed mode and the focus target are tested in the demo and with a real browser (click, keyboard, reload, collapse); the tests were checked by mutation (breaking the feature makes them fail).
 - CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
 
 ## Documentation
 
 - [How it works](docs/how-it-works.md) — problem, request flow, record menus, native navigation, class overview.
+- [This plugin or Filament's own navigation?](docs/vs-filament-native.md) — a decision guide.
+- [API stability](docs/api-stability.md) — what is public, what may change, and what 1.0 needs.
+- [Changelog](CHANGELOG.md).
 - [AGENTS.md](AGENTS.md) — for people and AI agents changing this repo.
 - [SKILLS.md](SKILLS.md) — for AI agents adding the plugin to a Filament app.
 

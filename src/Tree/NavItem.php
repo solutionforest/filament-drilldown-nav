@@ -31,6 +31,10 @@ class NavItem
 
     protected bool $heading = false;
 
+    protected ?int $limit = null;
+
+    protected ?string $moreUrl = null;
+
     protected bool $dividerBefore = false;
 
     /** @var string|(Closure(): ?string)|null */
@@ -163,6 +167,19 @@ class NavItem
     public function defaultExpanded(bool $expanded = true): static
     {
         $this->defaultExpanded = $expanded;
+
+        return $this;
+    }
+
+    /**
+     * Show at most $max children (the one containing the current page is always kept), followed by a
+     * "View all (N)" link to $moreUrl, or a "+N more" note without one. For menus with hundreds of entries.
+     * All children still take part in URL matching; only the display is shortened.
+     */
+    public function limit(int $max, ?string $moreUrl = null): static
+    {
+        $this->limit = max(1, $max);
+        $this->moreUrl = $moreUrl;
 
         return $this;
     }
@@ -357,6 +374,31 @@ class NavItem
 
             return array_values(array_filter($children, fn (NavItem $n) => $n->isVisible()));
         });
+    }
+
+    /**
+     * The children to display, shortened by ->limit(): the first N plus any child on the current path.
+     *
+     * @param  array<int, int>  $pathIds  spl_object_id()s of the items on the current path
+     * @return array{items: array<int, NavItem>, hidden: int, moreUrl: ?string}
+     */
+    public function getDisplayChildren(array $pathIds = []): array
+    {
+        $children = $this->getChildren();
+
+        if ($this->limit === null || count($children) <= $this->limit) {
+            return ['items' => $children, 'hidden' => 0, 'moreUrl' => null];
+        }
+
+        $shown = array_slice($children, 0, $this->limit);
+
+        foreach (array_slice($children, $this->limit) as $child) {
+            if (in_array(spl_object_id($child), $pathIds, true)) {
+                $shown[] = $child; // never hide where the visitor is
+            }
+        }
+
+        return ['items' => $shown, 'hidden' => count($children) - count($shown), 'moreUrl' => $this->moreUrl];
     }
 
     public function hasChildren(): bool

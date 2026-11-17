@@ -11,16 +11,33 @@
     $onPath = in_array(spl_object_id($item), $ctx['pathIds'], true);
     $inline = $item->isInline($ctx['inlineByDefault']) && $item->hasChildren();
     $labelText = $item->getLabelText();
+    $ancestors = $ancestors ?? '';
+    $lower = mb_strtolower($labelText);
+    $tailText = '';
+
+    if ($ctx['searchable']) {
+        $descend = function (array $children) use (&$descend): string {
+            return collect($children)->reject(fn ($child) => $child->isHeading())
+                ->map(fn ($child) => mb_strtolower($child->getLabelText()).' '.$descend($child->getChildren()))
+                ->implode(' ');
+        };
+        $tailText = $descend($item->getChildren());
+    }
+
+    $searchAttrs = new \Illuminate\View\ComponentAttributeBag($ctx['searchable']
+        ? ['x-show' => 'matches('.\Illuminate\Support\Js::from($lower).', '.\Illuminate\Support\Js::from($tailText).', '.\Illuminate\Support\Js::from($ancestors).')']
+        : []);
+    $headingShow = collect([$collapsible ? '$store.sidebar.isOpen' : null, $ctx['searchable'] ? '! searching' : null])->filter()->implode(' && ');
 @endphp
 
 @if ($item->isHeading())
     @if ($item->hasDivider() && ! $first)
-        <li role="separator" class="fi-drilldown-divider"></li>
+        <li role="separator" class="fi-drilldown-divider" @if ($ctx['searchable']) x-show="! searching" @endif></li>
     @endif
-    <li class="fi-drilldown-heading" @if ($collapsible) x-show="$store.sidebar.isOpen" @endif>{{ $item->getLabel() }}</li>
+    <li class="fi-drilldown-heading" @if ($headingShow !== '') x-show="{{ $headingShow }}" @endif>{{ $item->getLabel() }}</li>
 @else
     @if ($item->hasDivider() && ! $first)
-        <li role="separator" class="fi-drilldown-divider"></li>
+        <li role="separator" class="fi-drilldown-divider" @if ($ctx['searchable']) x-show="! searching" @endif></li>
     @endif
 
     @if ($inline)
@@ -36,6 +53,7 @@
                 open: {{ $onPath ? 'true' : 'false' }} || (localStorage.getItem(@js($key)) ?? @js($item->isDefaultExpanded() ? '1' : '0')) === '1',
             }"
             x-init="$watch('open', value => localStorage.setItem(@js($key), value ? '1' : '0'))"
+            {{ $searchAttrs }}
         >
             <div class="fi-drilldown-inline-row">
                 @if ($url)
@@ -72,10 +90,13 @@
                 @endif
             </div>
 
-            <ul x-show="{{ $shown }}" x-collapse class="fi-sidebar-sub-group-items fi-drilldown-inline-children">
-                @foreach ($item->getChildren() as $child)
-                    @include('filament-drilldown-nav::item', ['item' => $child, 'ctx' => $ctx, 'nested' => true, 'first' => $loop->first, 'last' => $loop->last])
+            @php $displayed = $item->getDisplayChildren($ctx['pathIds']); @endphp
+            <ul x-show="({{ $shown }}){{ $ctx['searchable'] ? ' || searching' : '' }}" x-collapse class="fi-sidebar-sub-group-items fi-drilldown-inline-children">
+                @foreach ($displayed['items'] as $child)
+                    @include('filament-drilldown-nav::item', ['item' => $child, 'ctx' => $ctx, 'nested' => true, 'first' => $loop->first, 'last' => $loop->last, 'ancestors' => trim($ancestors.' '.$lower)])
                 @endforeach
+
+                @include('filament-drilldown-nav::more', ['hidden' => $displayed['hidden'], 'moreUrl' => $displayed['moreUrl'], 'ctx' => $ctx])
             </ul>
         </li>
     @else
@@ -91,6 +112,7 @@
             :sub-grouped="$nested"
             :first="$first"
             :last="$last"
+            :attributes="$searchAttrs"
         >
             {{ $item->getLabel() }}
             @if ($item->hasChildren() || $item->hasRecordMenu())

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace SolutionForest\DrilldownNav\Tree;
 
+/**
+ * @internal Not part of the public API: it may change in any release. See docs/api-stability.md.
+ */
 class ActivePathResolver
 {
     /** Path part of a URL (absolute or relative), with a single leading slash and no trailing slash. */
