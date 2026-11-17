@@ -410,6 +410,7 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 - [Works with other plugins](docs/compatibility.md) — what was checked, versions, and how to repeat it.
 - [API stability](docs/api-stability.md) — what is public, what may change, and what 1.0 needs.
 - [Changelog](CHANGELOG.md).
+- [Contributing](CONTRIBUTING.md) and [Security policy](SECURITY.md).
 - [AGENTS.md](AGENTS.md) — for people and AI agents changing this repo.
 - [SKILLS.md](SKILLS.md) — for AI agents adding the plugin to a Filament app.
 

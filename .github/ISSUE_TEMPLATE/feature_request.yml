@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something the drill-down sidebar should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do in your panel, and why the current API makes it hard.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+      description: Ideally as the code you would like to write (`NavItem::…`).
+      render: php
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you tried
