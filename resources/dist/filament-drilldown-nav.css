@@ -70,3 +70,8 @@
 /* Inline section that starts closed: hidden before Alpine boots (no flash of open content). */
 .fi-drilldown-collapsed { display: none; }
 .fi-drilldown-poll { display: none; }
+
+/* "In other menus" search results (searchable(allLevels: true)). */
+.fi-drilldown-other { margin-top: 0.5rem; }
+.fi-drilldown-trail { color: var(--gray-500); margin-inline-end: 0.25rem; }
+.dark .fi-drilldown-trail { color: var(--gray-400); }

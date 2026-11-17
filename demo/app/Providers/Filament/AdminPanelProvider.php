@@ -66,7 +66,7 @@ class AdminPanelProvider extends PanelProvider
                 ['title' => 'You are inside: '.$data['title']],
             ))
             ->plugin(DrilldownNavPlugin::make()
-                ->searchable(minItems: 6)   // filter box once a level lists 6+ items
+                ->searchable(minItems: 6, allLevels: true)   // filter box once a level lists 6+ items; also finds pages on other levels; '/' focuses it
                 ->recent(5)                 // "Recent" pages at the top level
                 ->pinnable()                // "Pin this page" + a "Pinned" list
                 ->items(fn () => [

@@ -12,4 +12,5 @@ return [
     'pin' => '固定此页',
     'unpin' => '取消固定',
     'clear_recent' => '清除最近',
+    'other_levels' => '其他菜单',
 ];

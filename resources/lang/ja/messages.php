@@ -12,4 +12,5 @@ return [
     'pin' => 'このページをピン留め',
     'unpin' => 'ピン留めを解除',
     'clear_recent' => '最近の履歴を消去',
+    'other_levels' => '他のメニュー',
 ];

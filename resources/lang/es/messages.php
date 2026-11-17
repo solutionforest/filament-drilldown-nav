@@ -12,4 +12,5 @@ return [
     'pin' => 'Fijar esta página',
     'unpin' => 'Dejar de fijar',
     'clear_recent' => 'Borrar recientes',
+    'other_levels' => 'En otros menús',
 ];

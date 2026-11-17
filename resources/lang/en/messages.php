@@ -12,4 +12,5 @@ return [
     'pin' => 'Pin this page',
     'unpin' => 'Unpin this page',
     'clear_recent' => 'Clear recent',
+    'other_levels' => 'In other menus',
 ];

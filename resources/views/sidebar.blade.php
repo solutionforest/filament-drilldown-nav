@@ -39,6 +39,24 @@
     $allLabels = $searchable ? $collect($display['items']) : [];
     $showSearch = $searchable && count($allLabels) >= $plugin->getSearchMinItems();
 
+    // Search all levels: pages on screen are not repeated under "In other menus".
+    $searchAll = $showSearch && $plugin->searchesAllLevels();
+    $collectUrls = function (array $items) use (&$collectUrls, $pathIds, $inlineByDefault): array {
+        $urls = [];
+        foreach ($items as $item) {
+            if (($url = $item->getUrl()) !== null) {
+                $urls[] = $url;
+            }
+            if ($item->isInline($inlineByDefault) && $item->hasChildren()) {
+                $urls = [...$urls, ...$collectUrls($item->getDisplayChildren($pathIds)['items'])];
+            }
+        }
+
+        return $urls;
+    };
+    $onScreenUrls = $searchAll ? $collectUrls($display['items']) : [];
+    $searchShortcut = $showSearch ? $plugin->getSearchShortcut() : null;
+
     // Recent / pinned shortcuts: the current page, as "Project › Tasks".
     $pinnable = $plugin->isPinnable();
     $recentLimit = $plugin->getRecentLimit();
@@ -91,7 +109,30 @@
         pinned: [],
         recent: [],
         get searching() { return this.query.trim() !== '' },
-        get noMatches() { const q = this.query.trim().toLowerCase(); return q !== '' && ! this.labels.some((label) => label.includes(q)) },
+        searchAll: @js($searchAll),
+        onScreen: @js($onScreenUrls),
+        index: null,
+        loadingIndex: false,
+        get noMatches() { const q = this.query.trim().toLowerCase(); return q !== '' && ! this.labels.some((label) => label.includes(q)) && this.otherResults.length === 0 && ! this.loadingIndex },
+        get otherResults() {
+            const q = this.query.trim().toLowerCase()
+            if (! this.searchAll || this.index === null || q.length < 2) { return [] }
+            return this.index
+                .filter((entry) => ! this.onScreen.includes(entry.url) && (entry.label.toLowerCase().includes(q) || entry.trail.join(' ').toLowerCase().includes(q)))
+                .slice(0, 20)
+        },
+        loadIndex() {
+            if (! this.searchAll || this.index !== null || this.loadingIndex || this.query.trim().length < 2) { return }
+            this.loadingIndex = true
+            this.$wire.drilldownSearchIndex().then((entries) => { this.index = Array.isArray(entries) ? entries : [] }).catch(() => { this.index = [] }).finally(() => { this.loadingIndex = false })
+        },
+        focusSearch(event) {
+            const target = event.target
+            if (event.metaKey || event.ctrlKey || event.altKey || target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) { return }
+            if (! this.$refs.search || this.$refs.search.offsetParent === null) { return }
+            event.preventDefault()
+            this.$refs.search.focus()
+        },
         matches(self, tail = '', ancestors = '') {
             const q = this.query.trim().toLowerCase()
             return q === '' || self.includes(q) || tail.includes(q) || ancestors.includes(q)
@@ -172,12 +213,19 @@
 >
     {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_START) !!}
 
+    @if ($searchShortcut !== null)
+        <span class="fi-drilldown-poll" x-on:keydown.window="if ($event.key === @js($searchShortcut)) { focusSearch($event) }"></span>
+    @endif
+
     @if ($showSearch)
         <div class="fi-drilldown-search" @if ($collapsible) x-show="$store.sidebar.isOpen" @endif>
             <input
                 type="search"
                 x-model="query"
-                x-on:keydown.escape="query = ''"
+                x-ref="search"
+                x-on:input.debounce.150ms="loadIndex()"
+                x-on:keydown.escape="query = ''; $el.blur()"
+                @if ($searchShortcut !== null) aria-keyshortcuts="{{ $searchShortcut }}" @endif
                 placeholder="{{ __('filament-drilldown-nav::messages.search') }}"
                 aria-label="{{ __('filament-drilldown-nav::messages.search') }}"
                 class="fi-drilldown-search-input"
@@ -233,6 +281,22 @@
     </ul>
 
     {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_AFTER) !!}
+
+    @if ($searchAll)
+        <div class="fi-drilldown-other" x-show="otherResults.length > 0" x-cloak>
+            <div class="fi-drilldown-heading">{{ __('filament-drilldown-nav::messages.other_levels') }}</div>
+            <ul class="fi-drilldown-shortcut-list">
+                <template x-for="entry in otherResults" :key="entry.url">
+                    <li>
+                        <a :href="entry.url" @if ($spa) wire:navigate @endif class="fi-drilldown-shortcut">
+                            <span class="fi-drilldown-trail" x-show="entry.trail.length" x-text="entry.trail.join(' › ') + ' ›'"></span>
+                            <span x-text="entry.label"></span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    @endif
 
     @if ($searchable)
         <p class="fi-drilldown-empty" x-show="noMatches" x-cloak>{{ __('filament-drilldown-nav::messages.no_results') }}</p>

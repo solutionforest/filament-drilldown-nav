@@ -29,6 +29,10 @@ class DrilldownNavPlugin implements Plugin
 
     protected int $searchMinItems = 0;
 
+    protected bool $searchAllLevels = false;
+
+    protected ?string $searchShortcut = '/';
+
     protected int $recentLimit = 0;
 
     protected bool $pinnable = false;
@@ -66,9 +70,11 @@ class DrilldownNavPlugin implements Plugin
         return $plugin;
     }
 
+    public const ID = 'drilldown-nav';
+
     public function getId(): string
     {
-        return 'drilldown-nav';
+        return self::ID;
     }
 
     /**
@@ -99,13 +105,97 @@ class DrilldownNavPlugin implements Plugin
     /**
      * A search box above the menu that filters the items already on screen (the current level and
      * inline sections) as you type. With $minItems, it appears only when at least that many items are listed.
+     *
+     * With $allLevels, it also finds pages on levels that are not open ("In other menus"), from an index of
+     * the whole menu (see flatten()) loaded on first use. $shortcut is the key that focuses the box from
+     * anywhere on the page ('/' by default, null for none).
      */
-    public function searchable(bool $searchable = true, int $minItems = 0): static
+    public function searchable(bool $searchable = true, int $minItems = 0, bool $allLevels = false, ?string $shortcut = '/'): static
     {
+        if ($shortcut !== null && mb_strlen($shortcut) !== 1) {
+            throw new \InvalidArgumentException('searchable() expects a single-character shortcut (or null).');
+        }
+
         $this->searchable = $searchable;
         $this->searchMinItems = $minItems;
+        $this->searchAllLevels = $allLevels;
+        $this->searchShortcut = $shortcut;
 
         return $this;
+    }
+
+    public function searchesAllLevels(): bool
+    {
+        return $this->searchable && $this->searchAllLevels;
+    }
+
+    public function getSearchShortcut(): ?string
+    {
+        return $this->searchShortcut;
+    }
+
+    /**
+     * The whole menu as a flat list of pages the current user may see: label, URL, the labels of the
+     * levels above it (trail) and its depth. For "search all levels", command palettes, a mobile bottom
+     * bar (filter `depth === 0`) or tests.
+     *
+     * Runs children closures (once per request each), so it stops after $limit pages or $maxDepth levels.
+     * Per-record menus are not included: they depend on a record, and records are not enumerated.
+     *
+     * @return list<array{label: string, url: string, trail: list<string>, depth: int}>
+     */
+    public function flatten(int $limit = 300, int $maxDepth = 6): array
+    {
+        $entries = [];
+        $seen = [];
+        $this->flattenInto($this->getTree(), [], 0, $limit, $maxDepth, $entries, $seen);
+
+        return $entries;
+    }
+
+    /**
+     * @param  array<int, NavItem>  $items
+     * @param  list<string>  $trail
+     * @param  list<array{label: string, url: string, trail: list<string>, depth: int}>  $entries
+     * @param  array<string, true>  $seen
+     */
+    private function flattenInto(array $items, array $trail, int $depth, int $limit, int $maxDepth, array &$entries, array &$seen): void
+    {
+        foreach ($items as $item) {
+            if (count($entries) >= $limit) {
+                return;
+            }
+
+            if (! $item->isVisible() || $item->isHeading()) {
+                continue;
+            }
+
+            $label = $item->getLabelText();
+            $url = $item->getUrl();
+
+            if ($url !== null && ! isset($seen[$url])) {
+                $seen[$url] = true;
+                $entries[] = ['label' => $label, 'url' => $url, 'trail' => $trail, 'depth' => $depth];
+            }
+
+            if ($depth + 1 < $maxDepth) {
+                $this->flattenInto($item->getChildren(), [...$trail, $label], $depth + 1, $limit, $maxDepth, $entries, $seen);
+            }
+        }
+    }
+
+    /** The plugin of the panel being served, if that panel uses it. */
+    public static function current(): ?static
+    {
+        $panel = Filament::getCurrentOrDefaultPanel();
+
+        if ($panel === null || ! $panel->hasPlugin(self::ID)) {
+            return null;
+        }
+
+        $plugin = $panel->getPlugin(self::ID);
+
+        return $plugin instanceof static ? $plugin : null;
     }
 
     /** A "Recent" list of the last $limit pages visited (per browser and user) at the top level. 0 turns it off. */
