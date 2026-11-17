@@ -4,6 +4,24 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- **Render hooks:** `DrilldownNavHook::NAV_START`, `NAV_END`, `HEADER_BEFORE`, `HEADER_AFTER`, `LIST_BEFORE`, `LIST_AFTER`: Filament render hooks around the drill-down menu, scoped to the panel and carrying `plugin`, `panel`, `depth` and `title` as data. Register them the Filament way (`$panel->renderHook()` / `FilamentView::registerRenderHook()`).
+- **Locales:** Hebrew (`he`), Persian (`fa`) and Urdu (`ur`), so every right-to-left locale Filament ships with a layout direction for (Arabic, Hebrew, Persian, Urdu) has the plugin's own strings. (Machine-written; a native-speaker review is welcome.)
+- **Pinned pages clean up after themselves:** once a day a pinned page that no longer opens (deleted record, lost access: 403/404/410) is dropped, and a renamed page's label is refreshed.
+- **Concurrency check:** the Octane smoke test now also runs against **four workers with parallel requests** (300 requests from two users across three panels; every response must belong to its user and panel).
+
+### Changed
+- **PHPStan level 10** (was 9), still with no ignores and no baseline.
+- **Minimum Filament is 5.7** (was 5.10, which was a guess from failures that turned out to come from the tests, not the plugin). Verified on 5.7.0 (all 81 demo tests and the real-server smoke test). Below 5.7 the plugin still renders but Filament's own items lack `aria-current="page"` (added in 5.7), and from 5.5 down the top-navigation handling breaks. Note: Filament **below 5.8.3 has published security advisories** and Composer blocks those versions by default; the supported range is a compatibility range, not a security recommendation: run a patched Filament.
+- The Back link's collapsed-sidebar tooltip no longer depends on Filament's `filamentSidebarTooltip` helper (it only exists in newer versions); it uses the same `x-tooltip` directive Filament's own items use.
+- The demo's Composer path repository pins a stable version, so `demo/composer.lock` no longer goes stale when the Git branch changes.
+
+### Fixed
+- Demo tests that made several requests in one app instance depended on Filament resetting its per-request state (newer versions do, 5.9 and older do not); every test request now starts like a real worker's.
+
+### Verified
+- **Filament clusters** next to the plugin: a cluster shows up in the menu through `fromFilamentNavigation()`, its pages render Filament's own sub-navigation beside the content, and its menu item stays current (4 tests).
+
 ## [0.4.0] - 2026-11-17
 
 ### Added

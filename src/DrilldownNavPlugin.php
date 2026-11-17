@@ -11,6 +11,7 @@ use Filament\Livewire\Sidebar;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
+use LogicException;
 use SolutionForest\DrilldownNav\Livewire\DrilldownSidebar;
 use SolutionForest\DrilldownNav\Tree\NativeNavigation;
 use SolutionForest\DrilldownNav\Tree\NavItem;
@@ -38,13 +39,24 @@ class DrilldownNavPlugin implements Plugin
 
     public static function make(): static
     {
-        return app(static::class);
+        $plugin = app(static::class);
+
+        if (! $plugin instanceof static) {
+            throw new LogicException(static::class.' was resolved to something else from the container.');
+        }
+
+        return $plugin;
     }
 
     public static function get(): static
     {
-        /** @var static */
-        return filament(app(static::class)->getId());
+        $plugin = filament(static::make()->getId());
+
+        if (! $plugin instanceof static) {
+            throw new LogicException(static::class.' is not registered on the current panel.');
+        }
+
+        return $plugin;
     }
 
     public function getId(): string
@@ -123,6 +135,11 @@ class DrilldownNavPlugin implements Plugin
     public function isPinnable(): bool
     {
         return $this->pinnable;
+    }
+
+    public function getPanelId(): string
+    {
+        return $this->panelId;
     }
 
     /** Browser-storage key prefix, so two panels, tenants or users in one browser never share lists. */

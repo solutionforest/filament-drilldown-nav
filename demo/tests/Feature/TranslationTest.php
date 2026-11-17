@@ -24,6 +24,9 @@ class TranslationTest extends TestCase
             '한국어' => ['ko', '뒤로', '탐색'],
             'Español' => ['es', 'Atrás', 'Navegación'],
             'العربية' => ['ar', 'رجوع', 'التنقل'],
+            'עברית' => ['he', 'חזרה', 'ניווט'],
+            'فارسی' => ['fa', 'بازگشت', 'ناوبری'],
+            'اردو' => ['ur', 'واپس', 'نیویگیشن'],
         ];
     }
 
@@ -47,9 +50,16 @@ class TranslationTest extends TestCase
         }
     }
 
-    public function test_arabic_renders_right_to_left_with_the_mirroring_rules_present(): void
+    /** @return array<string, array{string}> */
+    public static function rtlLanguages(): array
     {
-        $html = (string) $this->actingAs(User::factory()->create())->get('/admin/reports/usage?lang=ar')->getContent();
+        return ['Arabic' => ['ar'], 'Hebrew' => ['he'], 'Persian' => ['fa'], 'Urdu' => ['ur']];
+    }
+
+    #[DataProvider('rtlLanguages')]
+    public function test_right_to_left_languages_render_rtl_with_the_mirroring_rules_present(string $locale): void
+    {
+        $html = (string) $this->actingAs(User::factory()->create())->get('/admin/reports/usage?lang='.$locale)->getContent();
 
         $this->assertMatchesRegularExpression('#<html[^>]*dir="rtl"#s', $html);
         // the plugin's RTL rules: mirrored chevrons and the reversed slide animation

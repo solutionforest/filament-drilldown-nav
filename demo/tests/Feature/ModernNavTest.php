@@ -126,7 +126,10 @@ class ModernNavTest extends TestCase
         $html = (string) $this->visit("/admin/projects/{$project->id}")->getContent();
 
         // Back: tooltip + aria-label when the sidebar is collapsed; text and title hidden
-        $this->assertStringContainsString('x-data="filamentSidebarTooltip"', $html);
+        $this->assertStringContainsString('x-tooltip.html="tooltip"', $html);
+        // the plugin's Back link must not use a helper component that only newer Filament versions ship
+        $this->assertSame(1, preg_match('#<a\s[^>]*class="fi-drilldown-back"[^>]*>#s', $html, $backLink));
+        $this->assertStringNotContainsString('filamentSidebarTooltip', $backLink[0]);
         $this->assertSame(1, preg_match('#<div\s[^>]*class="fi-drilldown-title"[^>]*>#s', $html, $title));
         $this->assertStringContainsString('x-show="$store.sidebar.isOpen"', $title[0]);
 

@@ -43,7 +43,7 @@ class NativeNavigation
 
         $manager = app(NavigationManager::class);
         $manager->mountNavigation();
-        $state->nativeItems = $manager->getNavigationItems();
+        $state->nativeItems = array_values($manager->getNavigationItems());
     }
 
     /** @return array<int, NavigationItem> */

@@ -27,7 +27,7 @@ Filament already ships good navigation. Use this plugin only if you need somethi
 | If… | Use |
 |---|---|
 | Two levels are enough | **Filament's native navigation** (groups, parent items): simpler, nothing to maintain |
-| One extra level per area and the second menu beside the content is fine | **Filament clusters** |
+| One extra level per area and the second menu beside the content is fine | **Filament clusters** (they also work next to this plugin) |
 | Records have their own areas with their own sub-menus | **this plugin** |
 | You want a deep or per-record menu in the sidebar | **this plugin** |
 
@@ -37,6 +37,6 @@ Filament already ships good navigation. Use this plugin only if you need somethi
 - Menu levels come from the **URL**, so a record's menu needs its pages under the resource's own URL (`/admin/agents/{record}/…`).
 - It is a **0.x** package: see [API stability](api-stability.md).
 
-## Not verified
+## Clusters next to the plugin
 
-How Filament clusters and their sub-navigation behave when combined with this plugin on the same panel has **not been tested**. If you rely on clusters, try it on a staging copy first.
+Tested: a cluster shows up in the menu through `fromFilamentNavigation()`, its pages render Filament's own sub-navigation beside the content (the plugin leaves it alone), and the cluster's menu item stays current while you are on its pages. So the two can be mixed on one panel; the cluster's sub-navigation is still a second menu beside the content, which is exactly what the drill-down sidebar is meant to avoid for deep or per-record menus.
