@@ -135,11 +135,13 @@ class DrilldownNavPlugin implements Plugin
         return $this;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function searchesAllLevels(): bool
     {
         return $this->searchable && $this->searchAllLevels;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getSearchShortcut(): ?string
     {
         return $this->searchShortcut;
@@ -243,7 +245,11 @@ class DrilldownNavPlugin implements Plugin
         return $this;
     }
 
-    /** Pins are stored in the database (and a user is signed in). */
+    /**
+     * Pins are stored in the database (and a user is signed in).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function storesPinsInDatabase(): bool
     {
         return $this->pinnable && $this->pinsInDatabase && auth()->user() !== null;
@@ -253,6 +259,8 @@ class DrilldownNavPlugin implements Plugin
      * The signed-in user's pins for this panel and tenant, newest first.
      *
      * @return list<array{url: string, label: string}>
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getPins(): array
     {
@@ -272,6 +280,8 @@ class DrilldownNavPlugin implements Plugin
      * sidebar links to; anything else is ignored.
      *
      * @return list<array{url: string, label: string}> the pins afterwards
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function togglePin(string $url, string $label): array
     {
@@ -295,7 +305,11 @@ class DrilldownNavPlugin implements Plugin
         return $this->getPins();
     }
 
-    /** @return list<array{url: string, label: string}> the pins afterwards */
+    /**
+     * @return list<array{url: string, label: string}> the pins afterwards
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function forgetPin(string $url): array
     {
         $this->pinQuery()?->where('url_hash', sha1($url))->delete();
@@ -303,7 +317,11 @@ class DrilldownNavPlugin implements Plugin
         return $this->getPins();
     }
 
-    /** Keep a pinned page's label current while the user is on it. */
+    /**
+     * Keep a pinned page's label current while the user is on it.
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function refreshPinLabel(string $url, string $label): void
     {
         $label = mb_substr(trim($label), 0, 120);
@@ -380,6 +398,7 @@ class DrilldownNavPlugin implements Plugin
         return $this;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function isAccordion(): bool
     {
         return $this->accordion;
@@ -390,6 +409,8 @@ class DrilldownNavPlugin implements Plugin
      * sidebar writes. Read on the server so a closed section is not painted open first.
      *
      * @return array<string, bool>
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getOpenState(): array
     {
@@ -413,37 +434,47 @@ class DrilldownNavPlugin implements Plugin
         return $state;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getPollInterval(): ?string
     {
         return $this->pollInterval;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function isSearchable(): bool
     {
         return $this->searchable;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getSearchMinItems(): int
     {
         return $this->searchMinItems;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getRecentLimit(): int
     {
         return $this->recentLimit;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function isPinnable(): bool
     {
         return $this->pinnable;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getPanelId(): string
     {
         return $this->panelId;
     }
 
-    /** Browser-storage key prefix, so two panels, tenants or users in one browser never share lists. */
+    /**
+     * Browser-storage key prefix, so two panels, tenants or users in one browser never share lists.
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getStorageKey(): string
     {
         $tenantKey = Filament::getTenant()?->getKey();
@@ -452,12 +483,17 @@ class DrilldownNavPlugin implements Plugin
         return 'fi-drilldown:'.$this->panelId.$tenantPart.':'.(auth()->id() ?? 'guest');
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getChildDisplay(): ChildDisplay
     {
         return $this->childDisplay;
     }
 
-    /** @return array<int, NavItem> evaluated once per request */
+    /**
+     * @return array<int, NavItem> evaluated once per request
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getTree(): array
     {
         return RequestState::current()->trees[$this->panelId] ??= $this->tree instanceof Closure ? ($this->tree)() : $this->tree;
@@ -466,6 +502,8 @@ class DrilldownNavPlugin implements Plugin
     /**
      * The panel's home URL as Filament builds it: includes the domain and, with multi-tenancy,
      * the current tenant (e.g. https://app.test/admin/acme).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getRootUrl(): string
     {
@@ -474,7 +512,11 @@ class DrilldownNavPlugin implements Plugin
         return $panel?->getUrl(Filament::getTenant()) ?? url($panel?->getPath() ?? '');
     }
 
-    /** Request path including the application's base path (apps installed in a sub-directory). */
+    /**
+     * Request path including the application's base path (apps installed in a sub-directory).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getRequestPath(): string
     {
         $request = original_request();

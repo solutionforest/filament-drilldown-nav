@@ -14,7 +14,7 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 | Sidebar component | `Livewire\DrilldownSidebar`, the `Livewire\Concerns\HidesNativeNavigation` trait (for panels with their own sidebar component) |
 | Display mode | `ChildDisplay::Drilldown`, `ChildDisplay::Inline` |
 | Building items | `NavItem::make()`, `::page()`, `::resource()`, `::heading()`, `::fromFilamentNavigation()` |
-| Item options | `url()`, `icon()`, `activeIcon()`, `badge()`, `visible()`, `children()`, `inline()`, `drilldown()`, `defaultExpanded()`, `divider()`, `limit()`, `activeOn()`, `header()`, `record()`, `recordHeader()`, `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()`, `activeOn()`, `activeWhen()`, `header()`, `recordHeader()` |
+| Item options | `url()`, `icon()`, `activeIcon()`, `badge()`, `visible()`, `children()`, `inline()`, `drilldown()`, `defaultExpanded()`, `divider()`, `limit()`, `activeOn()`, `activeWhen()`, `header()`, `record()`, `recordHeader()`, `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()` |
 | Translations | the keys in `resources/lang/*/messages.php` (publish tag `filament-drilldown-nav-translations`) |
 | Behaviour | the level is computed from the request URL; closures run once per request; only items returned from `items()` are shown |
 
@@ -31,9 +31,25 @@ Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys
 | Area | Why |
 |---|---|
 | **Classes marked `@internal`**: `RequestState`, `ActivePathResolver`, `NativeNavigation` | implementation details |
-| **Read accessors on `NavItem`** (`getLabel()`, `getChildren()`, `getDisplayChildren()`, `getRecordNode()` …) | they exist for the sidebar view; use the fluent setters instead |
+| **Read accessors** on `NavItem` (`get…()`, `is…()`, `has…()`, `opensLevel()`) and on `DrilldownNavPlugin` (`getTree()`, `getRootUrl()`, `getPins()`, `togglePin()` …), all tagged `@internal` | they exist for the sidebar view and its Livewire endpoints; use the fluent setters instead |
 | **Markup and CSS**: the Blade views and the `fi-drilldown-*` class names | styling hooks, not a contract. If you publish and override views, expect to re-check them on upgrades |
 | **Browser storage keys** (`fi-drilldown:*`) and the `fi-drilldown-open` cookie format | pinned/recent lists may be reset by an upgrade |
+
+## Freeze review (2026-11-17)
+
+Every public method was listed and classified. **Done in this review:** every read accessor is tagged `@internal` (43 methods), so editors warn when an app calls them; nothing was removed or renamed.
+
+**Decisions for the owner before 1.0.0-rc1** (my recommendation in bold):
+
+| # | Question | Options | Recommendation |
+|---|---|---|---|
+| 1 | `pollBadges()` re-renders the whole sidebar, not only badges | keep the name / rename to `poll()` | **rename to `poll()`** now: it is new and unreleased, so renaming costs nothing |
+| 2 | `searchable()` now has four parameters (`minItems`, `allLevels`, `shortcut`) | keep / split into `searchable()` + `searchShortcut()` | **keep**: named arguments read well and each has a safe default |
+| 3 | Pinned pages (with the new database option) and recent pages | promote to the 1.0 promise / keep experimental | **promote `pinnable()`** (it now has server storage and tests); **keep `recent()` experimental** (browser-only) |
+| 4 | `activeOn()` (more URLs) and `activeWhen()` (any condition) | keep both / keep only `activeWhen()` | **keep both**: `activeOn()` matches by prefix like the item's own URL, which `activeWhen()` can't do cleanly |
+| 5 | `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()` | keep public / mark advanced | **keep, documented as advanced**: only for record menus without a Filament resource |
+| 6 | `header()` and `recordHeader()` | keep both / merge | **keep both**: different targets (an item's level vs. a record's level) |
+| 7 | `fi-drilldown-*` CSS class names | promise them / keep them unguaranteed | **keep unguaranteed**, but promise `.fi-drilldown-hook` and `data-hook` (themes and other plugins target them) |
 
 ## Versioning policy
 
@@ -49,8 +65,10 @@ Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys
 | ✅ | Worker reuse verified on real Octane servers (RoadRunner, Swoole, FrankenPHP): one worker sequentially, and four workers under parallel load | done, in CI |
 | ✅ | Multi-panel, tenancy/domains, right-to-left | done (RTL checked in a browser with Arabic; Hebrew, Persian and Urdu share the rules and have strings) |
 | ✅ | Docs: README, how it works, API stability, changelog | done |
-| ⬜ | **Used in at least one real application** (not the demo) with its real menus | pending: to be done by the owner |
-| ⬜ | Public API reviewed and frozen (this page becomes a promise) | pending, after the real-app trial |
+| ⬜ | **Decisions below** (freeze review) taken by the owner | pending |
+| ⬜ | Hebrew, Persian and Urdu strings reviewed by a native speaker | pending: machine-written |
+| ⬜ | Public API frozen (this page becomes a promise), then **1.0.0-rc1** | after the two items above |
+| ✅ | Works next to other sidebar plugins | done: [compatibility](compatibility.md) |
 | ✅ | Collapsed (icon-only) sidebar fallback for items without an icon | done: the item's initial |
 | ✅ | Leaves Filament's navigation intact outside the sidebar (top navigation, breadcrumbs, other plugins) | done, tested |
 | ✅ | Strict Content-Security-Policy: no inline `<style>` or `style=""` | done: a published Filament asset |

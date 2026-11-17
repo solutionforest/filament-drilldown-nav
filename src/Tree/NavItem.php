@@ -370,13 +370,19 @@ class NavItem
      * Extra URLs from activeOn(), evaluated at most once per request.
      *
      * @return array<int, string>
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getActiveUrls(): array
     {
         return RequestState::current()->remember($this, 'active-urls', fn (): array => $this->activeUrls instanceof Closure ? ($this->activeUrls)() : $this->activeUrls);
     }
 
-    /** Whether activeWhen() says this item is the current page (false without a condition). */
+    /**
+     * Whether activeWhen() says this item is the current page (false without a condition).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function isActiveByCondition(): bool
     {
         $condition = $this->activeWhen;
@@ -384,7 +390,11 @@ class NavItem
         return $condition !== null && RequestState::current()->remember($this, 'active-when', fn (): bool => (bool) $condition());
     }
 
-    /** The custom header of this item's level (null = the default Back link and title). */
+    /**
+     * The custom header of this item's level (null = the default Back link and title).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getHeader(): Htmlable|string|null
     {
         return RequestState::current()->remember($this, 'header', function (): Htmlable|string|null {
@@ -394,12 +404,17 @@ class NavItem
         });
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getLabel(): string|Htmlable
     {
         return $this->label;
     }
 
-    /** Plain-text label (HTML stripped when the label is Htmlable). */
+    /**
+     * Plain-text label (HTML stripped when the label is Htmlable).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getLabelText(): string
     {
         return static::plainText($this->label);
@@ -441,6 +456,7 @@ class NavItem
         return $this;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getBadge(): ?string
     {
         $badge = $this->badge instanceof Closure ? ($this->badge)() : $this->badge;
@@ -448,55 +464,77 @@ class NavItem
         return $badge === null || $badge === '' ? null : $badge;
     }
 
-    /** @return string|array<mixed>|null */
+    /**
+     * @return string|array<mixed>|null
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getBadgeColor(): string|array|null
     {
         return $this->badgeColor instanceof Closure ? ($this->badgeColor)() : $this->badgeColor;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getIcon(): string|BackedEnum|Htmlable|null
     {
         return $this->icon;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getActiveIcon(): string|BackedEnum|Htmlable|null
     {
         return $this->activeIcon;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function isHeading(): bool
     {
         return $this->heading;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function hasDivider(): bool
     {
         return $this->dividerBefore;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function isDefaultExpanded(): bool
     {
         return $this->defaultExpanded;
     }
 
-    /** Whether the children are shown in place (true) or as a new level (false). */
+    /**
+     * Whether the children are shown in place (true) or as a new level (false).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function isInline(bool $default = false): bool
     {
         return $this->inline ?? $default;
     }
 
-    /** Opens its own level (has children and is not inline). */
+    /**
+     * Opens its own level (has children and is not inline).
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function opensLevel(bool $inlineByDefault = false): bool
     {
         return ! $this->isInline($inlineByDefault) && $this->hasChildren();
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function getUrl(): ?string
     {
         return $this->url;
     }
 
-    /** Where clicking the item goes: its own URL, or (for a pure group) its first reachable child. */
+    /**
+     * Where clicking the item goes: its own URL, or (for a pure group) its first reachable child.
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function getLinkUrl(): ?string
     {
         if ($this->url !== null) {
@@ -512,6 +550,7 @@ class NavItem
         return null;
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function isVisible(): bool
     {
         return (bool) ($this->visible instanceof Closure ? ($this->visible)() : $this->visible);
@@ -521,6 +560,8 @@ class NavItem
      * Visible children. The closure runs at most once per request.
      *
      * @return array<int, NavItem>
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getChildren(): array
     {
@@ -536,6 +577,8 @@ class NavItem
      *
      * @param  array<int, int>  $pathIds  spl_object_id()s of the items on the current path
      * @return array{items: array<int, NavItem>, hidden: int, moreUrl: ?string}
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getDisplayChildren(array $pathIds = []): array
     {
@@ -556,17 +599,23 @@ class NavItem
         return ['items' => $shown, 'hidden' => count($children) - count($shown), 'moreUrl' => $this->moreUrl];
     }
 
-    /** Children given as an array (not a closure): cheap to look into when the item is not on the current path. */
+    /**
+     * Children given as an array (not a closure): cheap to look into when the item is not on the current path.
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
+     */
     public function hasStaticChildren(): bool
     {
         return is_array($this->children) && $this->children !== [];
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function hasChildren(): bool
     {
         return $this->getChildren() !== [];
     }
 
+    /** @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md). */
     public function hasRecordMenu(): bool
     {
         return $this->recordMenu !== null;
@@ -576,6 +625,8 @@ class NavItem
      * The node for the record whose key follows this item's URL in $path: its URL is
      * this item's URL + key, its label the record title, its children the record menu.
      * Null when there is no record menu, no key, an ignored key, or no such record.
+     *
+     * @internal Used by the sidebar view; not part of the public API (see docs/api-stability.md).
      */
     public function getRecordNode(string $path): ?NavItem
     {
