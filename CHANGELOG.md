@@ -4,6 +4,8 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
 ### Added
 - **Render hooks:** `DrilldownNavHook::NAV_START`, `NAV_END`, `HEADER_BEFORE`, `HEADER_AFTER`, `LIST_BEFORE`, `LIST_AFTER`: Filament render hooks around the drill-down menu, scoped to the panel and carrying `plugin`, `panel`, `depth` and `title` as data. Register them the Filament way (`$panel->renderHook()` / `FilamentView::registerRenderHook()`).
 - **Locales:** Hebrew (`he`), Persian (`fa`) and Urdu (`ur`), so every right-to-left locale Filament ships with a layout direction for (Arabic, Hebrew, Persian, Urdu) has the plugin's own strings. (Machine-written; a native-speaker review is welcome.)
