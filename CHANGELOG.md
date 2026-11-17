@@ -4,6 +4,12 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-17
+
+### Fixed
+- More space between the Back link and the level title (0.25rem to 0.75rem), and a little more below the header.
+- Docs: all screenshots, the journey strip and the banner retaken with the new spacing.
+
 ### Changed
 - CI runs on GitHub-hosted runners (`ubuntu-latest`), including pull requests from forks; the workflow token is read-only.
 
