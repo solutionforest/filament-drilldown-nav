@@ -31,7 +31,7 @@ $panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
 ]));
 ```
 
-The plugin empties Filament's own list: **only items returned from `items()` are shown.**
+In the sidebar, the plugin's menu replaces Filament's own list: **only items returned from `items()` are shown there.** Filament's navigation itself stays intact (top navigation, breadcrumbs, other plugins). Run `php artisan filament:assets` after installing (publishes the stylesheet). If the panel sets its own `->sidebarLivewireComponent(...)`, add the `SolutionForest\DrilldownNav\Livewire\Concerns\HidesNativeNavigation` trait to that component. For pages the URL cannot place, use `->activeOn([...urls])` or `->activeWhen(fn () => request()->routeIs(...))`.
 
 ## Recipes
 

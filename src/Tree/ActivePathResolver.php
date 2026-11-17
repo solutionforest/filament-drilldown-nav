@@ -27,7 +27,8 @@ class ActivePathResolver
      *
      * An item matches by prefix, except when its URL is the panel root or the same URL as
      * one of its ancestors (e.g. a record's "Overview"): those match exactly only. Extra URLs
-     * from NavItem::activeOn() match the same way, as if they were the item's own.
+     * from NavItem::activeOn() match the same way, as if they were the item's own;
+     * NavItem::activeWhen() counts as an exact match.
      *
      * @param  array<int, NavItem>  $tree
      * @param  string|null  $rootPath  panel root (e.g. "/admin")
@@ -40,7 +41,9 @@ class ActivePathResolver
         $best = [];
         $bestLen = -1;
 
-        $walk = function (array $items, array $trail, array $ancestorUrls) use (&$walk, &$best, &$bestLen, $path, $rootPath): void {
+        // $conditionOnly: below an item that does not match the URL, only activeWhen() can match
+        // (static children only, so lazy children closures still run for the current path alone).
+        $walk = function (array $items, array $trail, array $ancestorUrls, bool $conditionOnly = false) use (&$walk, &$best, &$bestLen, $path, $rootPath): void {
             foreach ($items as $item) {
                 if (! $item->isVisible()) {
                     continue;
@@ -51,7 +54,7 @@ class ActivePathResolver
 
                 if ($url === null) {
                     // A URL-less group may contain the match.
-                    $walk($item->getChildren(), $current, $ancestorUrls);
+                    $walk($item->getChildren(), $current, $ancestorUrls, $conditionOnly);
 
                     continue;
                 }
@@ -60,7 +63,7 @@ class ActivePathResolver
                 $matchLen = -1;
 
                 // Its own URL first, then any extra URLs from activeOn(); the longest match counts.
-                foreach ([$u, ...array_map(self::normalise(...), $item->getActiveUrls())] as $candidate) {
+                foreach ($conditionOnly ? [] : [$u, ...array_map(self::normalise(...), $item->getActiveUrls())] as $candidate) {
                     $exactOnly = $candidate === '/' || $candidate === $rootPath || in_array($candidate, $ancestorUrls, true);
 
                     if ($path === $candidate || (! $exactOnly && str_starts_with($path, $candidate.'/'))) {
@@ -68,7 +71,16 @@ class ActivePathResolver
                     }
                 }
 
+                // activeWhen(): counts as an exact match of the request path.
+                if ($item->isActiveByCondition()) {
+                    $matchLen = strlen($path);
+                }
+
                 if ($matchLen < 0) {
+                    if ($item->hasStaticChildren()) {
+                        $walk($item->getChildren(), $current, [...$ancestorUrls, $u], true);
+                    }
+
                     continue;
                 }
 

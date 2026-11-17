@@ -339,3 +339,50 @@ it('evaluates an activeOn() closure at most once per request', function () {
 
     expect($calls)->toBe(1);
 });
+
+it('marks an item current by condition, whatever the URL (activeWhen)', function () {
+    $tree = [
+        NavItem::make('Home')->url('/admin'),
+        NavItem::make('Reports')->url('/admin/reports')->children([
+            NavItem::make('Usage')->url('/admin/reports/usage'),
+            NavItem::make('Export')->url('/admin/reports/export')->activeWhen(fn () => true),
+        ]),
+    ];
+
+    // a page the URL cannot place (e.g. /admin/downloads?report=1 served by a shared route)
+    [$resolved, $level] = resolveNav($tree, '/admin/downloads');
+
+    expect(labels($resolved['path']))->toBe(['Reports', 'Export'])
+        ->and((string) $level['active']->getLabel())->toBe('Export');
+});
+
+it('lets an exact URL match beat activeWhen only when it is deeper', function () {
+    $tree = [
+        NavItem::make('Reports')->url('/admin/reports')->activeWhen(fn () => true)->children([
+            NavItem::make('Usage')->url('/admin/reports/usage'),
+        ]),
+    ];
+
+    [$resolved] = resolveNav($tree, '/admin/reports/usage');
+    expect(labels($resolved['path']))->toBe(['Reports', 'Usage']);
+
+    [$resolved] = resolveNav($tree, '/admin/elsewhere');
+    expect(labels($resolved['path']))->toBe(['Reports']);
+});
+
+it('evaluates activeWhen at most once per request and ignores false', function () {
+    $calls = 0;
+    $tree = [
+        NavItem::make('Reports')->url('/admin/reports')->activeWhen(function () use (&$calls) {
+            $calls++;
+
+            return false;
+        }),
+    ];
+
+    $r = new ActivePathResolver;
+    expect($r->resolve($tree, '/admin/other', '/admin')['path'])->toBe([]);
+    $r->resolve($tree, '/admin/other', '/admin');
+
+    expect($calls)->toBe(1);
+});

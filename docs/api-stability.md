@@ -8,12 +8,21 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 
 | Area | API |
 |---|---|
-| Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()`, `->recent()`, `->pinnable()` |
+| Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()` |
+| Sidebar component | `Livewire\DrilldownSidebar`, the `Livewire\Concerns\HidesNativeNavigation` trait (for panels with their own sidebar component) |
 | Display mode | `ChildDisplay::Drilldown`, `ChildDisplay::Inline` |
 | Building items | `NavItem::make()`, `::page()`, `::resource()`, `::heading()`, `::fromFilamentNavigation()` |
-| Item options | `url()`, `icon()`, `activeIcon()`, `badge()`, `visible()`, `children()`, `inline()`, `drilldown()`, `defaultExpanded()`, `divider()`, `limit()`, `activeOn()`, `header()`, `record()`, `recordHeader()`, `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()` |
+| Item options | `url()`, `icon()`, `activeIcon()`, `badge()`, `visible()`, `children()`, `inline()`, `drilldown()`, `defaultExpanded()`, `divider()`, `limit()`, `activeOn()`, `header()`, `record()`, `recordHeader()`, `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()`, `activeOn()`, `activeWhen()`, `header()`, `recordHeader()` |
 | Translations | the keys in `resources/lang/*/messages.php` (publish tag `filament-drilldown-nav-translations`) |
 | Behaviour | the level is computed from the request URL; closures run once per request; only items returned from `items()` are shown |
+
+Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys()` are only needed for record menus that do **not** come from a Filament resource; `NavItem::resource()->record()` sets them for you.
+
+## Experimental (may change or move to an add-on before 1.0)
+
+| API | Why |
+|---|---|
+| `->recent()`, `->pinnable()` | stored per browser, not per account; links, not permissions. Kept out of the 1.0 promise until real use shows whether they belong in this package |
 
 ## Not guaranteed (may change in any release)
 
@@ -40,5 +49,9 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 | ✅ | Docs: README, how it works, API stability, changelog | done |
 | ⬜ | **Used in at least one real application** (not the demo) with its real menus | pending: to be done by the owner |
 | ⬜ | Public API reviewed and frozen (this page becomes a promise) | pending, after the real-app trial |
-| ⬜ | Collapsed (icon-only) sidebar fallback for items without an icon | not built |
+| ✅ | Collapsed (icon-only) sidebar fallback for items without an icon | done: the item's initial |
+| ✅ | Leaves Filament's navigation intact outside the sidebar (top navigation, breadcrumbs, other plugins) | done, tested |
+| ✅ | Strict Content-Security-Policy: no inline `<style>` or `style=""` | done: a published Filament asset |
+| ✅ | Minimum Filament version tested in CI (`--prefer-lowest`) | done: 5.10 |
+| ⬜ | Filament clusters next to the plugin | not tested |
 | ⬜ | Published on Packagist | on hold: the repository is private for now |

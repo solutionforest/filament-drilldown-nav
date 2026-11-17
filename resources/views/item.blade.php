@@ -15,6 +15,13 @@
     $lower = mb_strtolower($labelText);
     $tailText = '';
 
+    // Collapsed (icon-only) sidebar: an icon-less top-level item shows its initial instead of
+    // nothing (the initial is hidden again while the sidebar is open, see the stylesheet).
+    $icon = $item->getIcon();
+    if (blank($icon) && $collapsible && ! $nested && $labelText !== '') {
+        $icon = new \Illuminate\Support\HtmlString('<span class="fi-drilldown-initial" aria-hidden="true">'.e(mb_strtoupper(mb_substr($labelText, 0, 1))).'</span>');
+    }
+
     if ($ctx['searchable']) {
         $descend = function (array $children) use (&$descend): string {
             return collect($children)->reject(fn ($child) => $child->isHeading())
@@ -104,7 +111,7 @@
             :active="$isCurrent"
             :active-child-items="$onPath && ! $isCurrent"
             :active-icon="$item->getActiveIcon()"
-            :icon="$item->getIcon()"
+            :icon="$icon"
             :url="$item->getLinkUrl()"
             :badge="$item->getBadge()"
             :badge-color="$item->getBadgeColor()"
@@ -116,7 +123,7 @@
         >
             {{ $item->getLabel() }}
             @if ($item->hasChildren() || $item->hasRecordMenu())
-                <x-filament::icon icon="heroicon-m-chevron-right" class="fi-drilldown-chevron" style="width:1rem;height:1rem;display:inline-block;margin-inline-start:0.5rem;vertical-align:middle;opacity:.5" />
+                <x-filament::icon icon="heroicon-m-chevron-right" class="fi-drilldown-chevron" />
             @endif
         </x-filament-panels::sidebar.item>
     @endif

@@ -38,7 +38,10 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
 - **Resolver changes need a test** in `tests/ActivePathResolverTest.php` (pure) and, if they change rendering, a demo feature test. Every past bug has a regression test; keep that habit.
 - Keep `ActivePathResolver` free of Filament/HTTP dependencies.
 - Closures given to `children()`, `record()` or `items()` must run **at most once per request** and only for items on the current path. Do not add code that walks the whole tree eagerly.
-- Do not use `navigation(false)` on the panel: it removes the whole sidebar, so the render hook never fires. The plugin empties the list with a `NavigationBuilder` instead.
+- Do not use `navigation(false)` on the panel: it removes the whole sidebar, so the render hook never fires.
+- Never empty Filament's navigation for the whole panel: top navigation, breadcrumbs and other plugins read it. The builder closure returns an empty `NavigationBuilder` only while `RequestState::$hidingNativeNavigation` is set (by `HidesNativeNavigation` on the sidebar component) or while capturing for `fromFilamentNavigation()`; otherwise it returns `true` (Filament's default navigation).
+- No inline `<style>` or `style=""` in views (strict CSP): styles go in `resources/dist/filament-drilldown-nav.css`, registered as a Filament asset. Run `php artisan filament:assets` in the demo after changing it.
+- Minimum Filament version is 5.10, proven by the `lowest` CI job; raise it in both `composer.json` files if you need something newer.
 - Style: Laravel Pint, `declare(strict_types=1)`, Filament conventions. Conventional Commit messages.
 - Do not commit `.env`, `vendor/`, `demo/database/database.sqlite`, or the RoadRunner binary `demo/rr`.
 

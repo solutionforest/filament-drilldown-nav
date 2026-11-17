@@ -17,7 +17,7 @@ class NativeNavigationTest extends TestCase
     {
         $this->assertSame(1, preg_match('#class="fi-drilldown-nav"[^>]*>(.*?)</nav>#s', $response->getContent() ?: '', $m));
 
-        return trim((string) preg_replace('/\s+/', ' ', strip_tags(preg_replace('#<(?:p class="fi-drilldown-empty"|div class="fi-drilldown-shortcuts").*$#s', '', $m[1]))));
+        return trim((string) preg_replace('/\s+/', ' ', strip_tags((string) preg_replace('#<span class="fi-drilldown-initial"[^>]*>.*?</span>#s', '', (string) preg_replace('#<(?:p class="fi-drilldown-empty"|div class="fi-drilldown-shortcuts").*$#s', '', $m[1])))));
     }
 
     private function admin(): User

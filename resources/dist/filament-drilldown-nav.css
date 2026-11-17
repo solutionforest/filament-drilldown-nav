@@ -1,0 +1,68 @@
+/* filament-drilldown-nav: styles for the drill-down sidebar (registered as a Filament asset). */
+.fi-drilldown-nav { display: flex; flex-direction: column; gap: 0.25rem; }
+.fi-drilldown-list { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; padding: 0; list-style: none; }
+.fi-drilldown-list[data-direction="forward"] { animation: fi-drilldown-forward 0.2s ease-out; }
+.fi-drilldown-list[data-direction="back"] { animation: fi-drilldown-back 0.2s ease-out; }
+
+.fi-drilldown-header { display: flex; flex-direction: column; padding: 0 0.5rem 0.5rem; margin-bottom: 0.25rem; border-bottom: 1px solid var(--gray-200); }
+.dark .fi-drilldown-header { border-bottom-color: rgb(255 255 255 / 0.1); }
+.fi-drilldown-back { display: flex; align-items: center; gap: 0.25rem; margin-inline-start: -0.25rem; font-size: 0.875rem; font-weight: 500; color: var(--gray-500); text-decoration: none; }
+.fi-drilldown-back:hover { color: var(--gray-950); }
+.fi-drilldown-custom-header { outline: none; }
+.fi-drilldown-title { margin-top: 0.25rem; font-size: 1rem; font-weight: 600; color: var(--gray-950); outline: none; }
+.dark .fi-drilldown-back { color: var(--gray-400); }
+.dark .fi-drilldown-back:hover, .dark .fi-drilldown-title { color: #fff; }
+
+.fi-drilldown-search { padding: 0 0.5rem 0.5rem; }
+.fi-drilldown-search-input { width: 100%; padding: 0.375rem 0.625rem; font-size: 0.875rem; color: inherit; background: transparent; border: 1px solid var(--gray-300); border-radius: 0.5rem; outline: none; }
+.fi-drilldown-search-input:focus { border-color: var(--primary-500); box-shadow: 0 0 0 1px var(--primary-500); }
+.dark .fi-drilldown-search-input { border-color: rgb(255 255 255 / 0.15); }
+.fi-drilldown-empty { padding: 0.5rem; font-size: 0.875rem; color: var(--gray-500); }
+.fi-drilldown-more a, .fi-drilldown-more span { display: block; padding: 0.375rem 0.5rem; font-size: 0.8125rem; color: var(--gray-500); text-decoration: none; }
+.fi-drilldown-more a:hover { color: var(--gray-950); }
+.dark .fi-drilldown-more a:hover { color: #fff; }
+.fi-drilldown-shortcuts { margin-top: 0.5rem; }
+.fi-drilldown-shortcut-list { list-style: none; margin: 0; padding: 0; }
+.fi-drilldown-shortcut { display: block; padding: 0.25rem 0.5rem; font-size: 0.8125rem; color: var(--gray-700); text-decoration: none; border-radius: 0.375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fi-drilldown-shortcut:hover { background: var(--gray-100); }
+.dark .fi-drilldown-shortcut { color: var(--gray-300); }
+.dark .fi-drilldown-shortcut:hover { background: rgb(255 255 255 / 0.05); }
+.fi-drilldown-heading-row { display: flex; align-items: center; justify-content: space-between; }
+.fi-drilldown-link { background: none; border: 0; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--gray-500); cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.fi-drilldown-link:hover { color: var(--gray-950); text-decoration: underline; }
+.dark .fi-drilldown-link:hover { color: #fff; }
+.fi-drilldown-heading { padding: 0.75rem 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500); }
+.dark .fi-drilldown-heading { color: var(--gray-400); }
+.fi-drilldown-divider { height: 1px; margin: 0.5rem 0.5rem; background: var(--gray-200); list-style: none; }
+.dark .fi-drilldown-divider { background: rgb(255 255 255 / 0.1); }
+
+.fi-drilldown-inline-row { display: flex; align-items: center; gap: 0.125rem; }
+.fi-drilldown-inline-row > .fi-sidebar-item-btn { flex: 1 1 auto; min-width: 0; width: 100%; background: none; border: 0; cursor: pointer; text-align: start; }
+.fi-drilldown-toggle { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 1.75rem; height: 1.75rem; border: 0; border-radius: 0.375rem; background: none; color: var(--gray-400); cursor: pointer; }
+.fi-drilldown-toggle:hover { background: var(--gray-100); color: var(--gray-700); }
+.dark .fi-drilldown-toggle:hover { background: rgb(255 255 255 / 0.05); color: var(--gray-200); }
+.fi-drilldown-toggle-wrap { display: inline-flex; margin-inline-start: auto; }
+.fi-drilldown-toggle-icon { width: 1rem; height: 1rem; flex: none; transition: transform 0.15s ease; }
+.fi-drilldown-toggle-icon.fi-open { transform: rotate(90deg); }
+[dir="rtl"] .fi-drilldown-toggle-icon { transform: scaleX(-1); }
+[dir="rtl"] .fi-drilldown-toggle-icon.fi-open { transform: scaleX(-1) rotate(90deg); }
+.fi-drilldown-inline-children { margin-top: 0.125rem; }
+.fi-drilldown-inline-children .fi-drilldown-inline-children { padding-inline-start: 0.75rem; }
+
+/* Former inline style attributes (kept out of the markup for strict Content-Security-Policies). */
+.fi-drilldown-back-icon { width: 1.25rem; height: 1.25rem; }
+.fi-drilldown-chevron { width: 1rem; height: 1rem; display: inline-block; margin-inline-start: 0.5rem; vertical-align: middle; opacity: .5; }
+@keyframes fi-drilldown-forward { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+@keyframes fi-drilldown-back { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+[dir="rtl"] .fi-drilldown-list[data-direction="forward"] { animation-name: fi-drilldown-back; }
+[dir="rtl"] .fi-drilldown-list[data-direction="back"] { animation-name: fi-drilldown-forward; }
+[dir="rtl"] .fi-drilldown-back > svg, [dir="rtl"] .fi-drilldown-chevron { transform: scaleX(-1); }
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-drilldown-list, .fi-drilldown-toggle-icon { animation: none !important; transition: none !important; }
+}
+
+/* Collapsed (icon-only) sidebar: an item without an icon shows its initial instead of nothing. */
+.fi-drilldown-initial { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; line-height: 1; text-transform: uppercase; color: var(--gray-600); background: var(--gray-100); }
+.dark .fi-drilldown-initial { color: var(--gray-300); background: var(--gray-800); }
+.fi-sidebar.fi-sidebar-open .fi-icon:has(> .fi-drilldown-initial) { display: none; }

@@ -35,7 +35,7 @@ Full explanation with more diagrams (level selection, per-record sequence, nativ
 
 ## Requirements
 
-PHP 8.3+, Laravel 13, Filament v5.
+PHP 8.3+, Laravel 13, Filament **5.10** or later (the oldest version tested in CI).
 
 ## Install
 
@@ -44,6 +44,7 @@ Not on Packagist yet:
 ```bash
 composer config repositories.drilldown vcs https://github.com/solutionforest/filament-drilldown-nav
 composer require solutionforest/filament-drilldown-nav:dev-main
+php artisan filament:assets   # publishes the plugin's stylesheet (also run by `php artisan filament:upgrade`)
 ```
 
 ## Quick start
@@ -71,7 +72,9 @@ $panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
 ]));
 ```
 
-The plugin empties Filament's own list (keeping the sidebar shell, topbar and mobile drawer): **only items returned from `items()` are shown.**
+In the sidebar, the plugin's menu replaces Filament's own list: **only items returned from `items()` are shown there.** Everywhere else Filament's navigation is untouched: `->topNavigation()` still shows the native menu in the top bar (the drill-down menu is then in the mobile drawer), and breadcrumbs or other plugins that call `Filament::getNavigation()` still get the full list.
+
+> **Custom sidebar component?** The plugin swaps in its own sidebar Livewire component (`DrilldownSidebar`, a subclass of Filament's). If your panel already sets `->sidebarLivewireComponent(...)`, the plugin leaves yours alone; add the `SolutionForest\DrilldownNav\Livewire\Concerns\HidesNativeNavigation` trait to it, or Filament's list will show under the drill-down menu.
 
 ## Tutorial
 
@@ -145,6 +148,15 @@ NavItem::make('Knowledge')
     ->activeOn([KnowledgeDocumentResource::getIndexUrl(['agent' => $agent])]); // /agents/5/knowledge/{id}, …/create
 ```
 
+When the URL cannot place a page at all (a shared route, a tab in the query string, a React route), use `->activeWhen()` with any condition:
+
+```php
+NavItem::make('Exports')->url('/admin/reports/exports')
+    ->activeWhen(fn (): bool => request()->routeIs('downloads.*'));
+```
+
+It counts as an exact URL match (if another item matches the URL exactly, the deeper one wins) and runs at most once per request. It is found inside branches given as arrays; children built by a closure are only opened on the current path, so put `activeWhen()` items there only if their parent also matches.
+
 ### 4. Reuse Filament's own navigation
 
 Anything you already declare the Filament way keeps working (`$navigationGroup`, `$navigationParentItem`, `$navigationSort`, `$navigationBadge`, `shouldRegisterNavigation()`, `canAccess()`, `NavigationItem::make()`):
@@ -205,7 +217,7 @@ What you get without extra code: the section containing the current page is **op
 |---|---|
 | ![collapsed root](docs/screenshots/17-collapsed-root.png) | ![collapsed record](docs/screenshots/16-collapsed-record.png) |
 
-> Tip: give top-level items an icon. In the collapsed sidebar, an item without an icon has nothing to show.
+In the collapsed sidebar, a top-level item without an icon shows its **initial** in a small square, so it stays visible and clickable (with the label as tooltip). Icons still read better: give top-level items an icon where you can.
 
 ## Large menus: search, recent, pinned, long lists
 
@@ -222,8 +234,8 @@ DrilldownNavPlugin::make()
 ```
 
 - **Search** filters what is already on screen (the current level and inline sections) as you type: a section stays visible when a child matches, headings hide, `Esc` clears, and a note appears when nothing matches. It does **not** search levels you have not opened (those pages are separate; use Filament's global search for that).
-- **Recent / Pinned** are stored in the browser per panel and per user, show at the top level, and remember the page's trail (e.g. "Website redesign › Tasks"). The pin toggle appears on every level.
-- **`->limit($max, $moreUrl)`** shortens the display of a long child list. All children still take part in URL matching and the child containing the current page is never hidden, so the sidebar stays correct. Keep your own query small (`limit()` on the query): it shortens the display, it does not avoid loading the rows.
+- **Recent / Pinned** *(experimental, may change before 1.0)* are stored in the browser per panel, tenant and user, show at the top level, and remember the page's trail (e.g. "Website redesign › Tasks"). The pin toggle appears on every level. Only entries under the current panel (and tenant) URL are shown. They are links, not permissions: a pinned page the user can no longer open still shows until it is unpinned, and opening it gets Filament's usual 403/404.
+- **`->limit($max, $moreUrl)`** shortens the **display** of a long child list; it does not make big menus cheaper. All children still take part in URL matching and the child containing the current page is never hidden, so the sidebar stays correct. Keep your own query small (`limit()` on the query): it shortens the display, it does not avoid loading the rows.
 
 | Search | Pinned + Recent |
 |---|---|
@@ -325,7 +337,10 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 
 ## Limits
 
-The plugin owns the sidebar list, so items you do not list (or import) are not shown.
+- In the sidebar, only items you list (or import with `fromFilamentNavigation()`) are shown.
+- Levels come from the URL (plus `activeOn()` / `activeWhen()`), so a record's pages should live under the record's URL.
+- Search only covers what is on screen; recent and pinned pages are per browser.
+- How Filament clusters and their sub-navigation behave next to the plugin is not tested yet.
 
 ## License
 

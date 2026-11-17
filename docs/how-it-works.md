@@ -112,7 +112,7 @@ flowchart LR
     G --> H["Drill-down sidebar"]
 ```
 
-Why it is done this way: Resources and Pages only register their navigation items while Filament is *building* its sidebar. The plugin's navigation builder (which keeps the sidebar shell alive while emptying the default list) therefore captures the items at that moment, using Filament's public `NavigationManager` API. Use the optional `$filter` to drop items you list by hand.
+Why it is done this way: Resources and Pages only register their navigation items while Filament is *building* its sidebar. The plugin's navigation builder therefore captures the items at that moment (into a fresh `NavigationManager`, so Filament's own one is never mounted twice). Use the optional `$filter` to drop items you list by hand.
 
 ## 5. Two ways to show children
 
@@ -189,7 +189,8 @@ classDiagram
 
 | File | Responsibility |
 |---|---|
-| `src/DrilldownNavPlugin.php` | Registers the plugin: empties Filament's default list (keeps the sidebar shell) and renders ours at `SIDEBAR_NAV_START`. |
+| `src/DrilldownNavPlugin.php` | Registers the plugin: swaps in `DrilldownSidebar`, hides Filament's default list in the sidebar only (navigation stays intact elsewhere) and renders ours at `SIDEBAR_NAV_START`. |
+| `src/Livewire/DrilldownSidebar.php`, `Concerns/HidesNativeNavigation.php` | Filament's sidebar component, with its native list hidden while it renders. |
 | `src/Tree/NavItem.php` | The menu item: label, icon, URL, extra active URLs, badge, visibility, children (drilldown or inline), headings, dividers, per-record menu, custom level header. |
 | `src/ChildDisplay.php` | Enum: `Drilldown` or `Inline` default for a panel. |
 | `src/Tree/ActivePathResolver.php` | Pure logic: request path → active path → level to render. No Filament or HTTP dependencies, so it is easy to test. |
