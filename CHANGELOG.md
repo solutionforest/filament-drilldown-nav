@@ -4,6 +4,12 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+- Content from the sidebar's render hooks was not hidden in the collapsed (icon-only) sidebar, so free text widened the icon rail (to about 250 px in the demo). Hook output is now wrapped in `.fi-drilldown-hook` and shown only while a collapsible sidebar is open.
+
+### Added
+- `docs/compatibility.md`: checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav (all work; Hover Sidebar and Sidebar Resize conflict with each other).
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

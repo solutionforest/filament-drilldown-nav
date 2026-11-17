@@ -55,7 +55,17 @@
     // Render hooks (see DrilldownNavHook): scoped to this panel, with the level's data.
     $hookScopes = [$plugin->getPanelId()];
     $hookData = ['plugin' => $plugin, 'panel' => $plugin->getPanelId(), 'depth' => $level['depth'], 'title' => $level['parent'] ? ($level['title'] ?? $level['parent']->getLabelText()) : null];
-    $hook = fn (string $name) => \Filament\Support\Facades\FilamentView::renderHook($name, scopes: $hookScopes, data: $hookData);
+    // Hook content is wrapped (only when there is any) and, in a sidebar that collapses to icons, shown only
+    // while it is open: free text would otherwise widen the icon rail.
+    $hook = function (string $name) use ($hookScopes, $hookData, $collapsible): string {
+        $html = trim(\Filament\Support\Facades\FilamentView::renderHook($name, scopes: $hookScopes, data: $hookData)->toHtml());
+
+        if ($html === '') {
+            return '';
+        }
+
+        return '<div class="fi-drilldown-hook" data-hook="'.e($name).'"'.($collapsible ? ' x-show="$store.sidebar.isOpen"' : '').'>'.$html.'</div>';
+    };
 
     // Shared with the (recursive) item partial.
     $ctx = [
@@ -156,7 +166,7 @@
     aria-label="{{ __('filament-drilldown-nav::messages.navigation') }}"
     data-depth="{{ $level['depth'] }}"
 >
-    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_START) }}
+    {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_START) !!}
 
     @if ($showSearch)
         <div class="fi-drilldown-search" @if ($collapsible) x-show="$store.sidebar.isOpen" @endif>
@@ -172,7 +182,7 @@
     @endif
 
     @if ($level['parent'])
-        {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_BEFORE) }}
+        {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_BEFORE) !!}
     @endif
 
     @if ($level['parent'] && ($customHeader = $level['parent']->getHeader()) !== null)
@@ -205,10 +215,10 @@
     @endif
 
     @if ($level['parent'])
-        {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_AFTER) }}
+        {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_AFTER) !!}
     @endif
 
-    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_BEFORE) }}
+    {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_BEFORE) !!}
 
     <ul class="fi-drilldown-list" :data-direction="direction">
         @foreach ($display['items'] as $item)
@@ -218,7 +228,7 @@
         @include('filament-drilldown-nav::more', ['hidden' => $display['hidden'], 'moreUrl' => $display['moreUrl'], 'ctx' => $ctx])
     </ul>
 
-    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_AFTER) }}
+    {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_AFTER) !!}
 
     @if ($searchable)
         <p class="fi-drilldown-empty" x-show="noMatches" x-cloak>{{ __('filament-drilldown-nav::messages.no_results') }}</p>
@@ -264,5 +274,5 @@
             @endif
         </div>
     @endif
-    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_END) }}
+    {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_END) !!}
 </nav>
