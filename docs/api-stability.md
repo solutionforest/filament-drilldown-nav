@@ -74,4 +74,4 @@ Every public method was listed and classified. **Done in this review:** every re
 | ✅ | Strict Content-Security-Policy: no inline `<style>` or `style=""` | done: a published Filament asset |
 | ✅ | Minimum Filament version tested in CI (`--prefer-lowest`) | done: **5.7** (older versions lack `aria-current` in Filament's own items; 5.5 and below break the top-navigation handling) |
 | ✅ | Filament clusters next to the plugin | done, tested: they appear in the menu and keep their sub-navigation |
-| ⬜ | Submitted to Packagist | pending: needs a maintainer's Packagist account (install from GitHub meanwhile) |
+| ✅ | Submitted to Packagist | done: [packagist.org/packages/solutionforest/filament-drilldown-nav](https://packagist.org/packages/solutionforest/filament-drilldown-nav) |

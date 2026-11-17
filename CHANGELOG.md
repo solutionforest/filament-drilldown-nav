@@ -4,6 +4,11 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-17
+
+### Changed
+- Installation is now a plain `composer require solutionforest/filament-drilldown-nav` (the package is on Packagist); Packagist version and download badges in the README.
+
 ## [0.6.1] - 2026-11-17
 
 ### Fixed
