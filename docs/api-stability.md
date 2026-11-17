@@ -24,7 +24,7 @@ Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys
 
 | API | Why |
 |---|---|
-| `->recent()`, `->pinnable()` | stored per browser, not per account; links, not permissions. Kept out of the 1.0 promise until real use shows whether they belong in this package |
+| `->recent()`, `->pinnable()` (incl. `database:` / `model:`, the `DrilldownPin` model and the `drilldown_nav_pins` table) | recent is per browser; pins can now live in the database. Kept out of the 1.0 promise until the API freeze decides |
 
 ## Not guaranteed (may change in any release)
 

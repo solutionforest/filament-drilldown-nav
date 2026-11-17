@@ -5,6 +5,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 ## [Unreleased]
 
 ### Changed
+- The **Pinned** list moved to the top of the top level (it was below the menu). Recent stays below.
 - The open/closed state of inline sections is stored in a `fi-drilldown-open` cookie (excluded from cookie encryption, validated when read) instead of `localStorage`, and **rendered on the server**: a closed section no longer shows open until JavaScript starts. Previously stored states are not carried over.
 
 ### Fixed
@@ -15,6 +16,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **Live updates:** `DrilldownNavPlugin::pollBadges('30s')` re-renders the sidebar on an interval; `refresh-sidebar` keeps working.
 - **Search across all levels:** `searchable(allLevels: true)` also lists matching pages from levels that are not open ("In other menus", with their trail), from an index loaded over Livewire on first use. **`/`** focuses the search box (`shortcut:` to change or turn off).
 - **`DrilldownNavPlugin::flatten()`** and **`DrilldownNavPlugin::current()`:** the whole menu the user may see as a flat list (label, URL, trail, depth), for command palettes or a mobile bottom bar.
+- **Pinned pages in the database:** `pinnable(database: true)` (optional `model:`) stores pins per user, panel and tenant in a `drilldown_nav_pins` table (publishable migration), renders them on the server and syncs them across devices. URLs are checked to be paths under the panel; at most 20 pins; labels follow renamed pages.
 - **`DrilldownNavPlugin::accordion()`:** one inline section open at a time.
 - `docs/compatibility.md`: checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav (all work; Hover Sidebar and Sidebar Resize conflict with each other).
 

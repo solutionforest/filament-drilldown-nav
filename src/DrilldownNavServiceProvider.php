@@ -16,7 +16,8 @@ class DrilldownNavServiceProvider extends PackageServiceProvider
 
     public function configurePackage(Package $package): void
     {
-        $package->name(static::$name)->hasViews(static::$name)->hasTranslations();
+        $package->name(static::$name)->hasViews(static::$name)->hasTranslations()
+            ->hasMigration('create_drilldown_nav_pins_table'); // only for pinnable(database: true)
     }
 
     public function packageBooted(): void

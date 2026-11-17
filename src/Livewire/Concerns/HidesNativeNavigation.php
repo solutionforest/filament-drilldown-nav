@@ -48,4 +48,32 @@ trait HidesNativeNavigation
 
         return $plugin !== null && $plugin->searchesAllLevels() ? $plugin->flatten() : [];
     }
+
+    /**
+     * Pin or unpin a page (DrilldownNavPlugin::pinnable(database: true)).
+     *
+     * @return list<array{url: string, label: string}>
+     */
+    #[Exposed]
+    #[Renderless]
+    public function drilldownTogglePin(string $url, string $label): array
+    {
+        $plugin = DrilldownNavPlugin::current();
+
+        return $plugin !== null && $plugin->storesPinsInDatabase() ? $plugin->togglePin($url, $label) : [];
+    }
+
+    /**
+     * Drop a pinned page that no longer opens (found by the sidebar's daily check).
+     *
+     * @return list<array{url: string, label: string}>
+     */
+    #[Exposed]
+    #[Renderless]
+    public function drilldownForgetPin(string $url): array
+    {
+        $plugin = DrilldownNavPlugin::current();
+
+        return $plugin !== null && $plugin->storesPinsInDatabase() ? $plugin->forgetPin($url) : [];
+    }
 }
