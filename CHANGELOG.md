@@ -4,6 +4,8 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-17
+
 ### Added
 - **`NavItem::activeWhen(fn () => …)`:** marks an item current by any condition (route name, query string, React route), for pages the URL cannot place.
 - **Collapsed sidebar fallback:** a top-level item without an icon shows its initial instead of nothing.
