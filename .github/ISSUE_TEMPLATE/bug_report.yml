@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in the drill-down sidebar does not work as documented
+labels: [bug]
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Package, Filament, Laravel and PHP versions (`composer show solutionforest/filament-drilldown-nav filament/filament laravel/framework`)
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Plugin configuration
+      description: The `DrilldownNavPlugin::make()->…` part of your panel provider (trimmed to what matters)
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The URL you open and what you click. If you can, reproduce it in the demo app (`demo/`).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+      description: Which level/items you expected in the sidebar, and what you got. Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Other sidebar plugins installed, Octane, tenancy, SPA mode, right-to-left language …

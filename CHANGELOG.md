@@ -19,6 +19,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 - **`DrilldownNavPlugin::flatten()`** and **`DrilldownNavPlugin::current()`:** the whole menu the user may see as a flat list (label, URL, trail, depth), for command palettes or a mobile bottom bar.
 - **Pinned pages in the database:** `pinnable(database: true)` (optional `model:`) stores pins per user, panel and tenant in a `drilldown_nav_pins` table (publishable migration), renders them on the server and syncs them across devices. URLs are checked to be paths under the panel; at most 20 pins; labels follow renamed pages.
 - **`DrilldownNavPlugin::accordion()`:** one inline section open at a time.
+- Release hygiene: `SECURITY.md`, `CONTRIBUTING.md`, issue and pull request templates, and a `release` workflow that creates the GitHub release from the tag's changelog section (and fails when there is none; `bin/changelog-section.sh`).
 - `docs/compatibility.md`: checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav (all work; Hover Sidebar and Sidebar Resize conflict with each other).
 
 ## [0.5.0] - 2026-11-17

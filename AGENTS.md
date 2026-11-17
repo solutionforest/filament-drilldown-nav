@@ -17,7 +17,11 @@ Guidance for AI coding agents (and humans) working **on this repository**. If yo
 | `resources/views/sidebar.blade.php` | The sidebar view (own scoped CSS: Filament's compiled Tailwind does not include arbitrary utility classes). |
 | `tests/` | Pest tests for the package (no app boot needed). |
 | `demo/` | Laravel 13 + Filament v5 app wired via a path repository; its `tests/Feature` render real pages. |
-| `docs/` | `how-it-works.md` (diagrams) and `screenshots/`. |
+| `src/Tree/RecordPages.php` | Record menu from a resource's own record pages (`recordPages()`). |
+| `src/Livewire/` | `DrilldownSidebar` and the `HidesNativeNavigation` trait: hides Filament's list while the sidebar renders, and serves the Livewire endpoints (search index, pins). |
+| `src/Models/DrilldownPin.php`, `database/migrations/*.stub` | Pinned pages in the database (`pinnable(database: true)`). |
+| `docs/` | `how-it-works.md` (diagrams), `api-stability.md` (public API, freeze review), `compatibility.md`, `screenshots/`. |
+| `bin/changelog-section.sh` | Prints a version's changelog section; used by the release workflow. |
 
 ## Commands (all must pass before you push)
 
@@ -34,10 +38,12 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 10 on src/
 
 ## Rules
 
+- Every change updates `CHANGELOG.md` under `## [Unreleased]`. Tags are released by `.github/workflows/release.yml`, which fails when the tag has no changelog section.
+
 - **PHPStan level 10 (the strictest: `mixed` is checked) stays clean with no ignores and no baseline.** Fix the type, do not suppress it. No `@phpstan-ignore`, no `assert()`/inline `@var`/casts just to silence an error. Type class-name parameters as `class-string<…>`, and validate what app closures return (`instanceof`, `is_string`) instead of casting.
 - **Resolver changes need a test** in `tests/ActivePathResolverTest.php` (pure) and, if they change rendering, a demo feature test. Every past bug has a regression test; keep that habit.
 - Keep `ActivePathResolver` free of Filament/HTTP dependencies.
-- Closures given to `children()`, `record()` or `items()` must run **at most once per request** and only for items on the current path. Do not add code that walks the whole tree eagerly.
+- Closures given to `children()`, `record()` or `items()` must run **at most once per request** and only for items on the current path. Do not add code that walks the whole tree eagerly. The one exception is `DrilldownNavPlugin::flatten()` (search all levels, menu export): it runs only when asked for, and is capped by `$limit` and `$maxDepth`.
 - Do not use `navigation(false)` on the panel: it removes the whole sidebar, so the render hook never fires.
 - Never empty Filament's navigation for the whole panel: top navigation, breadcrumbs and other plugins read it. The builder closure returns an empty `NavigationBuilder` only while `RequestState::$hidingNativeNavigation` is set (by `HidesNativeNavigation` on the sidebar component) or while capturing for `fromFilamentNavigation()`; otherwise it returns `true` (Filament's default navigation).
 - No inline `<style>` or `style=""` in views (strict CSP): styles go in `resources/dist/filament-drilldown-nav.css`, registered as a Filament asset. Run `php artisan filament:assets` in the demo after changing it.

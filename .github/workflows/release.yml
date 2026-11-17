@@ -1,0 +1,27 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Changelog check and GitHub release
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Changelog entry for this tag
+        run: bin/changelog-section.sh "${GITHUB_REF_NAME}" > release-notes.md
+      - name: Create the release (skipped if it already exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists; leaving it unchanged."
+          else
+            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes-file release-notes.md \
+              $([[ "${GITHUB_REF_NAME}" == *-* ]] && echo --prerelease)
+          fi
