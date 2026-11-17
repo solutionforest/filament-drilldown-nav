@@ -12,4 +12,5 @@ return [
     'pin' => '이 페이지 고정',
     'unpin' => '고정 해제',
     'clear_recent' => '최근 항목 지우기',
+    'other_levels' => '다른 메뉴',
 ];

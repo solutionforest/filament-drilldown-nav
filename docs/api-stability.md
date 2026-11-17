@@ -8,7 +8,7 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 
 | Area | API |
 |---|---|
-| Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()`, `->accordion()`, `->pollBadges()` |
+| Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()` (with `allLevels`, `shortcut`), `::current()`, `->flatten()`, `->accordion()`, `->pollBadges()` |
 | Record menus | `NavItem::recordPages()`, the `Contracts\HasDrilldownRecordMenu` interface |
 | Render hooks | the six `DrilldownNavHook::*` names and the data they pass (`plugin`, `panel`, `depth`, `title`) |
 | Sidebar component | `Livewire\DrilldownSidebar`, the `Livewire\Concerns\HidesNativeNavigation` trait (for panels with their own sidebar component) |

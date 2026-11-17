@@ -13,6 +13,8 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 ### Added
 - **Record menus with less code:** `NavItem::resource(X)->recordPages()` builds a record's menu from the resource's own record pages (labels, icons, badges and access from each page, as Filament builds a record's sub-navigation); or implement `Contracts\HasDrilldownRecordMenu` on the resource. Demo: the new `auto` panel.
 - **Live updates:** `DrilldownNavPlugin::pollBadges('30s')` re-renders the sidebar on an interval; `refresh-sidebar` keeps working.
+- **Search across all levels:** `searchable(allLevels: true)` also lists matching pages from levels that are not open ("In other menus", with their trail), from an index loaded over Livewire on first use. **`/`** focuses the search box (`shortcut:` to change or turn off).
+- **`DrilldownNavPlugin::flatten()`** and **`DrilldownNavPlugin::current()`:** the whole menu the user may see as a flat list (label, URL, trail, depth), for command palettes or a mobile bottom bar.
 - **`DrilldownNavPlugin::accordion()`:** one inline section open at a time.
 - `docs/compatibility.md`: checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav (all work; Hover Sidebar and Sidebar Resize conflict with each other).
 

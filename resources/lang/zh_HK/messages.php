@@ -12,4 +12,5 @@ return [
     'pin' => '釘選此頁',
     'unpin' => '取消釘選',
     'clear_recent' => '清除最近',
+    'other_levels' => '其他選單',
 ];
