@@ -5,14 +5,25 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   package:
     name: Package (Pest + Pint + PHPStan 10)
-    # Self-hosted runner: never run code from fork pull requests.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, bcmath, exif, gd
+          coverage: none
+          tools: composer:v2
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/pint --test
       - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
@@ -20,11 +31,15 @@ jobs:
 
   demo:
     name: Demo app (Laravel 13 + Filament v5)
-    # Self-hosted runner: never run code from fork pull requests.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: sqlite3, pdo_sqlite, mbstring, intl, bcmath, exif, gd
+          coverage: none
+          tools: composer:v2
       - name: Install demo dependencies
         working-directory: demo
         run: composer install --no-interaction --prefer-dist
@@ -46,11 +61,15 @@ jobs:
     # run a patched Filament: the supported range is a compatibility range, not a security recommendation).
     env:
       COMPOSER_NO_SECURITY_BLOCKING: '1'
-    # Self-hosted runner: never run code from fork pull requests.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: sqlite3, pdo_sqlite, mbstring, intl, bcmath, exif, gd
+          coverage: none
+          tools: composer:v2
       - name: Package on lowest dependencies
         run: |
           composer update --prefer-lowest --prefer-stable --no-interaction --prefer-dist
@@ -68,15 +87,19 @@ jobs:
 
   octane:
     name: Real Octane worker (${{ matrix.server }})
-    # Self-hosted runner: never run code from fork pull requests.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         server: [roadrunner, swoole, frankenphp]
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: sqlite3, pdo_sqlite, mbstring, intl, bcmath, exif, gd, pcntl, sockets${{ matrix.server == 'swoole' && ', swoole' || '' }}
+          coverage: none
+          tools: composer:v2
       - name: Install demo dependencies
         working-directory: demo
         run: composer install --no-interaction --prefer-dist

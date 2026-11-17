@@ -35,7 +35,7 @@ composer check                                  # Pint + PHPStan level 10 + Pest
 | Lowest supported versions | package and demo on the **oldest** allowed Filament (5.7), with Composer's security block lifted on purpose (that version has advisories; this only proves compatibility) |
 | Real Octane worker (×3) | `bin/octane-smoke.sh` for RoadRunner, Swoole and FrankenPHP |
 
-Pull requests from forks are skipped on the maintainers' self-hosted runner, so untrusted code never runs there; maintainers re-run a contributor's branch after review.
+CI runs on GitHub-hosted runners (`ubuntu-latest`), including pull requests from forks; workflows get a read-only token.
 
 Releases are cut from a tag: the `release` workflow checks that `CHANGELOG.md` has a section for the tag and creates the GitHub release from it.
 
