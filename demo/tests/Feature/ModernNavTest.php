@@ -141,6 +141,11 @@ class ModernNavTest extends TestCase
 
         $this->assertStringContainsString('tabindex="-1"', $html);
         $this->assertStringContainsString('x-ref="title"', $html);
-        $this->assertStringContainsString('prefers-reduced-motion', $html);
+        $this->assertStringContainsString('prefers-reduced-motion', self::stylesheet());
+    }
+
+    private static function stylesheet(): string
+    {
+        return (string) file_get_contents(__DIR__.'/../../../resources/dist/filament-drilldown-nav.css');
     }
 }

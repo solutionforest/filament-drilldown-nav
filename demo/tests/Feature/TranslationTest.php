@@ -53,8 +53,10 @@ class TranslationTest extends TestCase
 
         $this->assertMatchesRegularExpression('#<html[^>]*dir="rtl"#s', $html);
         // the plugin's RTL rules: mirrored chevrons and the reversed slide animation
-        $this->assertStringContainsString('[dir="rtl"] .fi-drilldown-toggle-icon', $html);
-        $this->assertStringContainsString('[dir="rtl"] .fi-drilldown-list[data-direction="forward"]', $html);
+        $css = (string) file_get_contents(__DIR__.'/../../../resources/dist/filament-drilldown-nav.css');
+        $this->assertStringContainsString('[dir="rtl"] .fi-drilldown-toggle-icon', $css);
+        $this->assertStringContainsString('[dir="rtl"] .fi-drilldown-list[data-direction="forward"]', $css);
+        $this->assertStringContainsString('filament-drilldown-nav.css', $html); // the stylesheet is linked
     }
 
     public function test_unknown_language_falls_back_to_english(): void

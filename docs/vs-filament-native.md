@@ -33,7 +33,7 @@ Filament already ships good navigation. Use this plugin only if you need somethi
 
 ## Costs to know about
 
-- The plugin **owns the sidebar list**: it empties Filament's default list, so items you don't list (or import with `fromFilamentNavigation()`) are not shown.
+- The plugin **owns the sidebar list**: in the sidebar it replaces Filament's list, so items you don't list (or import with `fromFilamentNavigation()`) are not shown there. Filament's navigation itself is untouched (top navigation, breadcrumbs, other plugins).
 - Menu levels come from the **URL**, so a record's menu needs its pages under the resource's own URL (`/admin/agents/{record}/…`).
 - It is a **0.x** package: see [API stability](api-stability.md).
 

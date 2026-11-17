@@ -38,6 +38,29 @@ jobs:
         working-directory: demo
         run: php artisan test
 
+  lowest:
+    name: Lowest supported versions (Filament 5.10)
+    # Proves the minimum in composer.json: the package and the demo on the oldest versions it allows.
+    # Self-hosted runner: never run code from fork pull requests.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package on lowest dependencies
+        run: |
+          composer update --prefer-lowest --prefer-stable --no-interaction --prefer-dist
+          vendor/bin/pest
+      - name: Demo on the lowest allowed Filament
+        working-directory: demo
+        run: |
+          composer install --no-interaction --prefer-dist
+          composer update 'filament/*' --prefer-lowest --prefer-stable --with-all-dependencies --no-interaction --prefer-dist
+          composer show filament/filament | grep versions
+          cp -n .env.example .env || true
+          php artisan key:generate --force
+          touch database/database.sqlite
+          php artisan test
+
   octane:
     name: Real Octane worker (${{ matrix.server }})
     # Self-hosted runner: never run code from fork pull requests.

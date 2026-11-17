@@ -27,6 +27,9 @@ final class RequestState
 
     public bool $capturingNativeNavigation = false;
 
+    /** True while the plugin's sidebar renders: Filament's own list is empty there only. */
+    public bool $hidingNativeNavigation = false;
+
     public bool $capturedNativeNavigation = false;
 
     /** @var array<int, NavigationItem> */

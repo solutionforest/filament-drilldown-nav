@@ -5,8 +5,18 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- **`NavItem::activeWhen(fn () => …)`:** marks an item current by any condition (route name, query string, React route), for pages the URL cannot place.
+- **Collapsed sidebar fallback:** a top-level item without an icon shows its initial instead of nothing.
+- CI job on the **lowest** supported versions (`--prefer-lowest`): package and demo.
 - **Own header for a level:** `NavItem::recordHeader(fn ($record) => view(...))` for a record's menu and `->header(...)` for any item that opens a level replace the default Back link and title (a view renders as HTML, a string as text; the header gets the focus the title would). Demo: one task's menu.
 - **Extra active URLs:** `NavItem::activeOn([...])` keeps an item current on pages under other URLs (matched like its own: by prefix, exact only for the panel root and ancestor URLs), e.g. a list at `/agents/5/sources` whose records open at `/agents/5/knowledge/{id}`.
+
+### Changed
+- **Filament's navigation stays intact outside the sidebar.** The plugin used to empty the panel's navigation, which also emptied `->topNavigation()` menus, breadcrumbs built from navigation, and anything else calling `Filament::getNavigation()`. Now only the sidebar's own list is hidden, via the plugin's sidebar component `DrilldownSidebar` (or the `HidesNativeNavigation` trait on your own).
+- **Stylesheet is a Filament asset** (`php artisan filament:assets`) instead of an inline `<style>` block and `style=""` attributes: works with a strict Content-Security-Policy and can be overridden by a theme.
+- **Requires Filament 5.10+** (was `^5.0`): 5.9 and older fail the demo tests; 5.10 is the oldest version tested in CI.
+- Recent and pinned pages are stored per **tenant** too, and only entries under the current panel/tenant URL are shown (stored entries are also checked to be same-site paths).
+- `->recent()` and `->pinnable()` are marked **experimental** in `docs/api-stability.md`.
 
 ## [0.3.0] - 2026-11-17
 

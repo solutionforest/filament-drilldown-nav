@@ -6,6 +6,12 @@
     $collapsible = $ctx['collapsible'];
     $isCurrent = $item === $ctx['current'];
     $icon = ($isCurrent && $item->getActiveIcon()) ? $item->getActiveIcon() : $item->getIcon();
+    $labelText = $item->getLabelText();
+
+    // Collapsed sidebar: an icon-less top-level row shows its initial (hidden while the sidebar is open).
+    if (blank($icon) && $collapsible && ! $nested && $labelText !== '') {
+        $icon = new \Illuminate\Support\HtmlString('<span class="fi-drilldown-initial" aria-hidden="true">'.e(mb_strtoupper(mb_substr($labelText, 0, 1))).'</span>');
+    }
 @endphp
 
 @if ($nested && blank($icon))

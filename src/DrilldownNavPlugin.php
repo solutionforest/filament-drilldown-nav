@@ -7,9 +7,11 @@ namespace SolutionForest\DrilldownNav;
 use Closure;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
+use Filament\Livewire\Sidebar;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
+use SolutionForest\DrilldownNav\Livewire\DrilldownSidebar;
 use SolutionForest\DrilldownNav\Tree\NativeNavigation;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
@@ -123,10 +125,13 @@ class DrilldownNavPlugin implements Plugin
         return $this->pinnable;
     }
 
-    /** Browser-storage key prefix, so two panels or two users in one browser never share lists. */
+    /** Browser-storage key prefix, so two panels, tenants or users in one browser never share lists. */
     public function getStorageKey(): string
     {
-        return 'fi-drilldown:'.$this->panelId.':'.(auth()->id() ?? 'guest');
+        $tenantKey = Filament::getTenant()?->getKey();
+        $tenantPart = is_int($tenantKey) || is_string($tenantKey) ? ':t'.$tenantKey : '';
+
+        return 'fi-drilldown:'.$this->panelId.$tenantPart.':'.(auth()->id() ?? 'guest');
     }
 
     public function getChildDisplay(): ChildDisplay
@@ -164,13 +169,26 @@ class DrilldownNavPlugin implements Plugin
         $this->panel = $panel;
         $this->panelId = $panel->getId();
 
-        // Empty the native navigation but keep the sidebar shell (and its render hooks):
-        // navigation(false) would remove the sidebar entirely.
-        $panel->navigation(function (NavigationBuilder $builder): NavigationBuilder {
-            NativeNavigation::capture(); // lets NavItem::fromFilamentNavigation() reuse Filament's items
+        // Filament's own navigation stays intact for the top bar, breadcrumbs and other plugins; it is
+        // only empty while the plugin's sidebar renders (see HidesNativeNavigation). Returning true
+        // means "no custom builder": Filament then builds its navigation as usual.
+        $panel->navigation(function (NavigationBuilder $builder): NavigationBuilder|bool {
+            $state = RequestState::current();
 
-            return $builder;
+            if ($state->capturingNativeNavigation) {
+                NativeNavigation::capture(); // lets NavItem::fromFilamentNavigation() reuse Filament's items
+
+                return $builder;
+            }
+
+            return $state->hidingNativeNavigation ? $builder : true;
         });
+
+        // Use the plugin's sidebar component unless the panel already has its own
+        // (add the HidesNativeNavigation trait to that one).
+        if ($panel->getSidebarLivewireComponent() === Sidebar::class) {
+            $panel->sidebarLivewireComponent(DrilldownSidebar::class);
+        }
 
         // A panel-scoped hook (not a global one): other panels, with or without this plugin,
         // are never affected, and each panel renders its own tree.

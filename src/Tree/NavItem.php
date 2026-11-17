@@ -57,6 +57,9 @@ class NavItem
     /** @var array<int, string>|(Closure(): array<int, string>) */
     protected array|Closure $activeUrls = [];
 
+    /** @var (Closure(): bool)|null */
+    protected ?Closure $activeWhen = null;
+
     /** @var Htmlable|string|(Closure(): (Htmlable|string|null))|null */
     protected Htmlable|string|Closure|null $header = null;
 
@@ -207,6 +210,21 @@ class NavItem
     }
 
     /**
+     * Marks the item as the current page whenever $condition returns true, whatever the URL:
+     * for pages the URL cannot place, e.g. `fn () => request()->routeIs('reports.*')` or a tab in
+     * the query string. It counts as an exact URL match; if another item matches the URL exactly,
+     * the deeper of the two wins. Evaluated at most once per request; only items with a URL use it.
+     *
+     * @param  Closure(): bool  $condition
+     */
+    public function activeWhen(Closure $condition): static
+    {
+        $this->activeWhen = $condition;
+
+        return $this;
+    }
+
+    /**
      * Replaces the default header (Back link and title) above the level this item opens, e.g. with
      * a card and a switcher. Rendered as given: an Htmlable (a view) as HTML, a string as escaped text.
      * The header then owns the way back, so include a link to the parent level yourself.
@@ -319,6 +337,14 @@ class NavItem
     public function getActiveUrls(): array
     {
         return RequestState::current()->remember($this, 'active-urls', fn (): array => $this->activeUrls instanceof Closure ? ($this->activeUrls)() : $this->activeUrls);
+    }
+
+    /** Whether activeWhen() says this item is the current page (false without a condition). */
+    public function isActiveByCondition(): bool
+    {
+        $condition = $this->activeWhen;
+
+        return $condition !== null && RequestState::current()->remember($this, 'active-when', fn (): bool => (bool) $condition());
     }
 
     /** The custom header of this item's level (null = the default Back link and title). */
@@ -467,6 +493,12 @@ class NavItem
         }
 
         return ['items' => $shown, 'hidden' => count($children) - count($shown), 'moreUrl' => $this->moreUrl];
+    }
+
+    /** Children given as an array (not a closure): cheap to look into when the item is not on the current path. */
+    public function hasStaticChildren(): bool
+    {
+        return is_array($this->children) && $this->children !== [];
     }
 
     public function hasChildren(): bool

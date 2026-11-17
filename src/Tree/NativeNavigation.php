@@ -54,6 +54,13 @@ class NativeNavigation
         $state->capturedNativeNavigation = false;
         $state->nativeItems = [];
 
+        // Collect into a fresh navigation manager: Filament's own (request-scoped) manager may
+        // already be mounted this request (top navigation, breadcrumbs, other plugins), and
+        // mounting it a second time would register every item twice.
+        $container = app();
+        $previous = $container->resolved(NavigationManager::class) ? $container->make(NavigationManager::class) : null;
+        $container->instance(NavigationManager::class, new NavigationManager);
+
         try {
             Filament::getCurrentOrDefaultPanel()?->getNavigation();
 
@@ -61,6 +68,12 @@ class NativeNavigation
         } finally {
             $state->capturingNativeNavigation = false;
             $state->nativeItems = [];
+
+            if ($previous !== null) {
+                $container->instance(NavigationManager::class, $previous);
+            } else {
+                $container->forgetInstance(NavigationManager::class);
+            }
         }
     }
 
