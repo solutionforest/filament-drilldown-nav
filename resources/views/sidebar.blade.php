@@ -52,6 +52,11 @@
         'label' => $resolved['path'] === [] ? null : $currentTrail,
     ];
 
+    // Render hooks (see DrilldownNavHook): scoped to this panel, with the level's data.
+    $hookScopes = [$plugin->getPanelId()];
+    $hookData = ['plugin' => $plugin, 'panel' => $plugin->getPanelId(), 'depth' => $level['depth'], 'title' => $level['parent'] ? ($level['title'] ?? $level['parent']->getLabelText()) : null];
+    $hook = fn (string $name) => \Filament\Support\Facades\FilamentView::renderHook($name, scopes: $hookScopes, data: $hookData);
+
     // Shared with the (recursive) item partial.
     $ctx = [
         'pathIds' => $pathIds,
@@ -95,8 +100,39 @@
             this.write('pinned', this.pinned)
         },
         clearRecent() { this.recent = []; this.write('recent', []) },
+        // Once a day per pinned page: drop pins whose page no longer opens (deleted, no access) and keep
+        // the label of a renamed page current. A page we are on is refreshed without a request.
+        async verifyPinned() {
+            const now = Date.now()
+            let checked = {}
+            try { checked = JSON.parse(localStorage.getItem(this.shortcuts.key + ':checked')) ?? {} } catch (e) {}
+            let changed = false
+            for (const entry of [...this.pinned]) {
+                if (entry.url === this.here.url) {
+                    if (this.here.label && entry.label !== this.here.label) { entry.label = this.here.label; changed = true }
+                    checked[entry.url] = now
+                    continue
+                }
+                if (now - (checked[entry.url] ?? 0) < 86400000) { continue }
+                try {
+                    const response = await fetch(entry.url, { method: 'HEAD', credentials: 'same-origin', redirect: 'manual' })
+                    if ([403, 404, 410].includes(response.status)) {
+                        this.pinned = this.pinned.filter((pin) => pin.url !== entry.url)
+                        delete checked[entry.url]
+                        changed = true
+                        continue
+                    }
+                    checked[entry.url] = now
+                } catch (e) { /* offline: keep it */ }
+            }
+            if (changed) { this.write('pinned', this.pinned) }
+            try { localStorage.setItem(this.shortcuts.key + ':checked', JSON.stringify(checked)) } catch (e) {}
+        },
         init() {
-            if (this.shortcuts.pinnable) { this.pinned = this.read('pinned') }
+            if (this.shortcuts.pinnable) {
+                this.pinned = this.read('pinned')
+                if (this.pinned.length) { (window.requestIdleCallback ?? ((callback) => setTimeout(callback, 1500)))(() => this.verifyPinned()) }
+            }
             if (this.shortcuts.recentLimit > 0) {
                 this.recent = this.read('recent')
                 if (this.here.label) {
@@ -120,6 +156,8 @@
     aria-label="{{ __('filament-drilldown-nav::messages.navigation') }}"
     data-depth="{{ $level['depth'] }}"
 >
+    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_START) }}
+
     @if ($showSearch)
         <div class="fi-drilldown-search" @if ($collapsible) x-show="$store.sidebar.isOpen" @endif>
             <input
@@ -133,6 +171,10 @@
         </div>
     @endif
 
+    @if ($level['parent'])
+        {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_BEFORE) }}
+    @endif
+
     @if ($level['parent'] && ($customHeader = $level['parent']->getHeader()) !== null)
         {{-- A header set with header() / recordHeader() replaces Back and the title; it gets the focus a title would. --}}
         <div class="fi-drilldown-custom-header" tabindex="-1" x-ref="title">{{ $customHeader }}</div>
@@ -143,8 +185,10 @@
                 @if ($spa) wire:navigate @endif
                 @if ($collapsible)
                     x-bind:aria-label="$store.sidebar.isOpen ? null : @js(__('filament-drilldown-nav::messages.back'))"
-                    x-data="filamentSidebarTooltip"
-                    x-tooltip="getTooltip({ content: @js(__('filament-drilldown-nav::messages.back')) })"
+                    {{-- Self-contained tooltip (the same directive Filament's own items use), so it does not depend on a Filament version's helper component. --}}
+                    x-data="{ tooltip: false }"
+                    x-effect="tooltip = $store.sidebar.isOpen ? false : { content: @js(__('filament-drilldown-nav::messages.back')), placement: document.dir === 'rtl' ? 'left' : 'right', theme: $store.theme }"
+                    x-tooltip.html="tooltip"
                 @endif
                 class="fi-drilldown-back"
             >
@@ -160,6 +204,12 @@
         </div>
     @endif
 
+    @if ($level['parent'])
+        {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_AFTER) }}
+    @endif
+
+    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_BEFORE) }}
+
     <ul class="fi-drilldown-list" :data-direction="direction">
         @foreach ($display['items'] as $item)
             @include('filament-drilldown-nav::item', ['item' => $item, 'ctx' => $ctx, 'nested' => false, 'first' => $loop->first, 'last' => $loop->last, 'ancestors' => ''])
@@ -167,6 +217,8 @@
 
         @include('filament-drilldown-nav::more', ['hidden' => $display['hidden'], 'moreUrl' => $display['moreUrl'], 'ctx' => $ctx])
     </ul>
+
+    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_AFTER) }}
 
     @if ($searchable)
         <p class="fi-drilldown-empty" x-show="noMatches" x-cloak>{{ __('filament-drilldown-nav::messages.no_results') }}</p>
@@ -212,4 +264,5 @@
             @endif
         </div>
     @endif
+    {{ $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_END) }}
 </nav>

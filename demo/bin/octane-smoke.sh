@@ -44,18 +44,29 @@ case "$SERVER" in
 esac
 
 LOG="$(mktemp)"
-setsid php artisan octane:start --server="$SERVER" --host=127.0.0.1 --port="$PORT" --workers=1 --max-requests=100000 >"$LOG" 2>&1 &
-PID=$!
-stop() { kill -- -"$PID" 2>/dev/null || kill "$PID" 2>/dev/null; sleep 1; }
+PID=""
+stop() { [ -n "$PID" ] && { kill -- -"$PID" 2>/dev/null || kill "$PID" 2>/dev/null; sleep 1; PID=""; }; }
 trap stop EXIT
 
-for i in $(seq 1 60); do
-  curl -s -o /dev/null "http://127.0.0.1:$PORT/admin/login" && break
-  sleep 1
-  if ! kill -0 "$PID" 2>/dev/null; then echo "Octane ($SERVER) exited early:"; tail -20 "$LOG"; exit 3; fi
-done
+# Phase 1: ONE worker, sequential requests (the strictest case for state leaking between requests).
+# Phase 2: FOUR workers, many requests in parallel (leaks between users/panels under concurrency).
+run_phase() {
+  WORKERS="$1"; shift
+  setsid php artisan octane:start --server="$SERVER" --host=127.0.0.1 --port="$PORT" --workers="$WORKERS" --max-requests=100000 >"$LOG" 2>&1 &
+  PID=$!
+  for i in $(seq 1 60); do
+    curl -s -o /dev/null "http://127.0.0.1:$PORT/admin/login" && break
+    sleep 1
+    if ! kill -0 "$PID" 2>/dev/null; then echo "Octane ($SERVER) exited early:"; tail -20 "$LOG"; return 3; fi
+  done
+  php bin/octane-smoke.php "http://127.0.0.1:$PORT" "$@"
+  local status=$?
+  if [ "$status" -ne 0 ]; then echo "--- server log ---"; tail -20 "$LOG"; fi
+  stop
+  return "$status"
+}
 
-php bin/octane-smoke.php "http://127.0.0.1:$PORT"
-STATUS=$?
-if [ "$STATUS" -ne 0 ]; then echo "--- server log ---"; tail -20 "$LOG"; fi
-exit "$STATUS"
+# OCTANE_PHASES="4" runs only the concurrent phase (default: "1 4").
+for phase in ${OCTANE_PHASES:-1 4}; do
+  if [ "$phase" = "1" ]; then run_phase 1 || exit $?; else run_phase "$phase" --concurrent || exit $?; fi
+done

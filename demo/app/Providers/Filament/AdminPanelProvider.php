@@ -29,7 +29,9 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use SolutionForest\DrilldownNav\DrilldownNavHook;
 use SolutionForest\DrilldownNav\DrilldownNavPlugin;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
@@ -49,9 +51,20 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
             ->navigationGroups([
                 NavigationGroup::make('Reports')->icon('heroicon-o-chart-pie'),
             ])
+            // Render hooks of the drill-down sidebar (see DrilldownNavHook): extra content around the menu,
+            // scoped to this panel. The closure may declare `array $data` (plugin, panel, depth, title).
+            ->renderHook(DrilldownNavHook::NAV_END, fn (array $data): string => Blade::render(
+                '<div data-demo-hook="nav-end" data-depth="{{ $depth }}" class="fi-drilldown-hook-help"><a href="https://filamentphp.com/docs/5.x/advanced/render-hooks" target="_blank" rel="noopener">Help</a></div>',
+                ['depth' => $data['depth']],
+            ))
+            ->renderHook(DrilldownNavHook::HEADER_AFTER, fn (array $data): string => Blade::render(
+                '<p data-demo-hook="header-after" class="fi-drilldown-hook-note">{{ $title }}</p>',
+                ['title' => 'You are inside: '.$data['title']],
+            ))
             ->plugin(DrilldownNavPlugin::make()
                 ->searchable(minItems: 6)   // filter box once a level lists 6+ items
                 ->recent(5)                 // "Recent" pages at the top level
@@ -141,6 +154,11 @@ class AdminPanelProvider extends PanelProvider
                         ]),
                         NavItem::make('Plans')->url('/admin/demo/subscription/plans'),
                     ]),
+
+                    // Built per request from the signed-in user: a menu that leaked between requests or users
+                    // on a long-lived worker would show someone else's name (the Octane smoke test checks this).
+                    NavItem::make('Profile: '.(auth()->user()?->name ?? 'guest'))->icon('heroicon-o-user-circle')
+                        ->url('/admin/demo/profile'),
 
                     // Visible to the demo admin only (evaluated per request, per user).
                     NavItem::make('Audit log')->icon('heroicon-o-shield-check')->url('/admin/demo/audit')

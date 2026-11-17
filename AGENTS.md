@@ -25,7 +25,7 @@ Guidance for AI coding agents (and humans) working **on this repository**. If yo
 composer install
 vendor/bin/pest                                   # package tests
 vendor/bin/pint --test                            # code style (Laravel preset)
-vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
+vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 10 on src/
 (cd demo && composer install && cp -n .env.example .env && php artisan key:generate \
    && touch database/database.sqlite && php artisan test)   # demo feature tests
 ```
@@ -34,14 +34,15 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
 
 ## Rules
 
-- **PHPStan level 9 stays clean with no ignores and no baseline.** Fix the type, do not suppress it. No `@phpstan-ignore`, no `assert()`/inline `@var` just to silence an error.
+- **PHPStan level 10 (the strictest: `mixed` is checked) stays clean with no ignores and no baseline.** Fix the type, do not suppress it. No `@phpstan-ignore`, no `assert()`/inline `@var`/casts just to silence an error. Type class-name parameters as `class-string<…>`, and validate what app closures return (`instanceof`, `is_string`) instead of casting.
 - **Resolver changes need a test** in `tests/ActivePathResolverTest.php` (pure) and, if they change rendering, a demo feature test. Every past bug has a regression test; keep that habit.
 - Keep `ActivePathResolver` free of Filament/HTTP dependencies.
 - Closures given to `children()`, `record()` or `items()` must run **at most once per request** and only for items on the current path. Do not add code that walks the whole tree eagerly.
 - Do not use `navigation(false)` on the panel: it removes the whole sidebar, so the render hook never fires.
 - Never empty Filament's navigation for the whole panel: top navigation, breadcrumbs and other plugins read it. The builder closure returns an empty `NavigationBuilder` only while `RequestState::$hidingNativeNavigation` is set (by `HidesNativeNavigation` on the sidebar component) or while capturing for `fromFilamentNavigation()`; otherwise it returns `true` (Filament's default navigation).
 - No inline `<style>` or `style=""` in views (strict CSP): styles go in `resources/dist/filament-drilldown-nav.css`, registered as a Filament asset. Run `php artisan filament:assets` in the demo after changing it.
-- Minimum Filament version is 5.10, proven by the `lowest` CI job; raise it in both `composer.json` files if you need something newer.
+- Minimum Filament version is **5.7** (see `docs/api-stability.md` for why); the `lowest` CI job proves it. It lifts Composer's security block on purpose (Filament < 5.8.3 has advisories). Raise the constraint in both `composer.json` files only for something you truly need.
+- Demo tests must start every request like a real worker (`demo/tests/TestCase.php` flushes scoped instances and facades before each request). Do not remove it: older Filament keeps request state between requests in one app instance, which made tests fail for reasons that cannot happen on a server.
 - Style: Laravel Pint, `declare(strict_types=1)`, Filament conventions. Conventional Commit messages.
 - Do not commit `.env`, `vendor/`, `demo/database/database.sqlite`, or the RoadRunner binary `demo/rr`.
 

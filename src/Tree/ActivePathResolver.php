@@ -36,71 +36,82 @@ class ActivePathResolver
      */
     public function resolve(array $tree, string $path, ?string $rootPath = null): array
     {
-        $path = self::normalise($path);
-        $rootPath = $rootPath !== null ? self::normalise($rootPath) : null;
-        $best = [];
-        $bestLen = -1;
+        $state = new ResolveState(
+            path: self::normalise($path),
+            rootPath: $rootPath !== null ? self::normalise($rootPath) : null,
+        );
 
-        // $conditionOnly: below an item that does not match the URL, only activeWhen() can match
-        // (static children only, so lazy children closures still run for the current path alone).
-        $walk = function (array $items, array $trail, array $ancestorUrls, bool $conditionOnly = false) use (&$walk, &$best, &$bestLen, $path, $rootPath): void {
-            foreach ($items as $item) {
-                if (! $item->isVisible()) {
-                    continue;
-                }
+        $this->walk($tree, [], [], false, $state);
 
-                $current = [...$trail, $item];
-                $url = $item->getUrl();
+        return ['path' => $state->best];
+    }
 
-                if ($url === null) {
-                    // A URL-less group may contain the match.
-                    $walk($item->getChildren(), $current, $ancestorUrls, $conditionOnly);
-
-                    continue;
-                }
-
-                $u = self::normalise($url);
-                $matchLen = -1;
-
-                // Its own URL first, then any extra URLs from activeOn(); the longest match counts.
-                foreach ($conditionOnly ? [] : [$u, ...array_map(self::normalise(...), $item->getActiveUrls())] as $candidate) {
-                    $exactOnly = $candidate === '/' || $candidate === $rootPath || in_array($candidate, $ancestorUrls, true);
-
-                    if ($path === $candidate || (! $exactOnly && str_starts_with($path, $candidate.'/'))) {
-                        $matchLen = max($matchLen, strlen($candidate));
-                    }
-                }
-
-                // activeWhen(): counts as an exact match of the request path.
-                if ($item->isActiveByCondition()) {
-                    $matchLen = strlen($path);
-                }
-
-                if ($matchLen < 0) {
-                    if ($item->hasStaticChildren()) {
-                        $walk($item->getChildren(), $current, [...$ancestorUrls, $u], true);
-                    }
-
-                    continue;
-                }
-
-                if ($matchLen >= $bestLen) {
-                    $best = $current;
-                    $bestLen = $matchLen;
-                }
-
-                $urls = [...$ancestorUrls, $u];
-
-                if (($record = $item->getRecordNode($path)) !== null) {
-                    $walk([$record], $current, $urls);
-                }
-
-                $walk($item->getChildren(), $current, $urls);
+    /**
+     * @param  array<int, NavItem>  $items
+     * @param  array<int, NavItem>  $trail  items from the root down to (not including) $items
+     * @param  array<int, string>  $ancestorUrls
+     * @param  bool  $conditionOnly  below an item that does not match the URL, only activeWhen() can match
+     *                               (static children only, so lazy children closures still run for the
+     *                               current path alone)
+     */
+    private function walk(array $items, array $trail, array $ancestorUrls, bool $conditionOnly, ResolveState $state): void
+    {
+        foreach ($items as $item) {
+            if (! $item->isVisible()) {
+                continue;
             }
-        };
-        $walk($tree, [], []);
 
-        return ['path' => $best];
+            $current = [...$trail, $item];
+            $url = $item->getUrl();
+
+            if ($url === null) {
+                // A URL-less group may contain the match.
+                $this->walk($item->getChildren(), $current, $ancestorUrls, $conditionOnly, $state);
+
+                continue;
+            }
+
+            $u = self::normalise($url);
+            $matchLen = -1;
+
+            // Its own URL first, then any extra URLs from activeOn(); the longest match counts.
+            $candidates = $conditionOnly ? [] : [$u, ...array_map(self::normalise(...), $item->getActiveUrls())];
+
+            foreach ($candidates as $candidate) {
+                $exactOnly = $candidate === '/' || $candidate === $state->rootPath || in_array($candidate, $ancestorUrls, true);
+
+                if ($state->path === $candidate || (! $exactOnly && str_starts_with($state->path, $candidate.'/'))) {
+                    $matchLen = max($matchLen, strlen($candidate));
+                }
+            }
+
+            // activeWhen(): counts as an exact match of the request path.
+            if ($item->isActiveByCondition()) {
+                $matchLen = strlen($state->path);
+            }
+
+            if ($matchLen < 0) {
+                if ($item->hasStaticChildren()) {
+                    $this->walk($item->getChildren(), $current, [...$ancestorUrls, $u], true, $state);
+                }
+
+                continue;
+            }
+
+            if ($matchLen >= $state->bestLen) {
+                $state->best = $current;
+                $state->bestLen = $matchLen;
+            }
+
+            $urls = [...$ancestorUrls, $u];
+            $record = $item->getRecordNode($state->path);
+
+            if ($record !== null) {
+                $this->walk([$record], $current, $urls, false, $state);
+            }
+
+            $this->walk($item->getChildren(), $current, $urls, false, $state);
+        }
     }
 
     /**

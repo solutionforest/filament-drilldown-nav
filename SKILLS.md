@@ -106,6 +106,13 @@ NavItem::make('Projects')->children(fn () => [...])->limit(5, $allProjectsUrl); 
 
 - Search filters only what is on screen; recent/pinned are per browser, panel and user; `limit()` shortens the display only (keep your query small).
 
+## Render hooks
+
+```php
+$panel->renderHook(DrilldownNavHook::NAV_END, fn (array $data) => view('nav-help', ['depth' => $data['depth']]));
+```
+Hooks: `NAV_START`, `NAV_END`, `HEADER_BEFORE`, `HEADER_AFTER`, `LIST_BEFORE`, `LIST_AFTER` (panel-scoped; `$data` = plugin, panel, depth, title). Prefer these to publishing the views.
+
 ## Multi-panel, Octane, tenants, languages
 
 - Register the plugin on as many panels as you like, each with its own `items()`. Panels without it are untouched.

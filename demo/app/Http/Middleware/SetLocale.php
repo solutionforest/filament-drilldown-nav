@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 /** Demo only: `?lang=ja` switches the interface language and remembers it in the session. */
 class SetLocale
 {
-    public const LOCALES = ['en', 'zh_CN', 'zh_TW', 'zh_HK', 'ja', 'ko', 'es', 'ar'];
+    public const LOCALES = ['en', 'zh_CN', 'zh_TW', 'zh_HK', 'ja', 'ko', 'es', 'ar', 'he', 'fa', 'ur'];
 
     public function handle(Request $request, Closure $next): mixed
     {

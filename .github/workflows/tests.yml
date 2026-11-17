@@ -7,7 +7,7 @@ on:
 
 jobs:
   package:
-    name: Package (Pest + Pint + PHPStan 9)
+    name: Package (Pest + Pint + PHPStan 10)
     # Self-hosted runner: never run code from fork pull requests.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
@@ -39,8 +39,13 @@ jobs:
         run: php artisan test
 
   lowest:
-    name: Lowest supported versions (Filament 5.10)
+    name: Lowest supported versions (Filament 5.7)
     # Proves the minimum in composer.json: the package and the demo on the oldest versions it allows.
+    # Filament below 5.8.3 has published security advisories, which Composer blocks by default; this job
+    # lifts that block on purpose, because it only checks that the plugin WORKS there (apps should still
+    # run a patched Filament: the supported range is a compatibility range, not a security recommendation).
+    env:
+      COMPOSER_NO_SECURITY_BLOCKING: '1'
     # Self-hosted runner: never run code from fork pull requests.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted

@@ -9,6 +9,7 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 | Area | API |
 |---|---|
 | Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()` |
+| Render hooks | the six `DrilldownNavHook::*` names and the data they pass (`plugin`, `panel`, `depth`, `title`) |
 | Sidebar component | `Livewire\DrilldownSidebar`, the `Livewire\Concerns\HidesNativeNavigation` trait (for panels with their own sidebar component) |
 | Display mode | `ChildDisplay::Drilldown`, `ChildDisplay::Inline` |
 | Building items | `NavItem::make()`, `::page()`, `::resource()`, `::heading()`, `::fromFilamentNavigation()` |
@@ -43,15 +44,15 @@ Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys
 
 | | Requirement | Status |
 |---|---|---|
-| ✅ | Tested on Pest + PHPStan level 9 + feature tests on the real panel | done |
-| ✅ | Worker reuse verified on real Octane servers (RoadRunner, Swoole, FrankenPHP) | done, in CI |
-| ✅ | Multi-panel, tenancy/domains, right-to-left | done (RTL checked with Arabic only) |
+| ✅ | Tested on Pest + PHPStan level 10 + feature tests on the real panel | done |
+| ✅ | Worker reuse verified on real Octane servers (RoadRunner, Swoole, FrankenPHP): one worker sequentially, and four workers under parallel load | done, in CI |
+| ✅ | Multi-panel, tenancy/domains, right-to-left | done (RTL checked in a browser with Arabic; Hebrew, Persian and Urdu share the rules and have strings) |
 | ✅ | Docs: README, how it works, API stability, changelog | done |
 | ⬜ | **Used in at least one real application** (not the demo) with its real menus | pending: to be done by the owner |
 | ⬜ | Public API reviewed and frozen (this page becomes a promise) | pending, after the real-app trial |
 | ✅ | Collapsed (icon-only) sidebar fallback for items without an icon | done: the item's initial |
 | ✅ | Leaves Filament's navigation intact outside the sidebar (top navigation, breadcrumbs, other plugins) | done, tested |
 | ✅ | Strict Content-Security-Policy: no inline `<style>` or `style=""` | done: a published Filament asset |
-| ✅ | Minimum Filament version tested in CI (`--prefer-lowest`) | done: 5.10 |
-| ⬜ | Filament clusters next to the plugin | not tested |
+| ✅ | Minimum Filament version tested in CI (`--prefer-lowest`) | done: **5.7** (older versions lack `aria-current` in Filament's own items; 5.5 and below break the top-navigation handling) |
+| ✅ | Filament clusters next to the plugin | done, tested: they appear in the menu and keep their sub-navigation |
 | ⬜ | Published on Packagist | on hold: the repository is private for now |

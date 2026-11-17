@@ -7,6 +7,8 @@ namespace SolutionForest\DrilldownNav\Tree;
 use BackedEnum;
 use Closure;
 use Filament\Navigation\NavigationItem;
+use Filament\Pages\Page;
+use Filament\Resources\Resource;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -15,7 +17,7 @@ use SolutionForest\DrilldownNav\RequestState;
 
 class NavItem
 {
-    /** @var array<int, NavItem>|Closure|null */
+    /** @var array<int, NavItem>|(Closure(): array<int, NavItem>)|null */
     protected array|Closure|null $children = null;
 
     protected string|BackedEnum|Htmlable|null $icon = null;
@@ -45,13 +47,14 @@ class NavItem
 
     protected bool|Closure $visible = true;
 
+    /** Closures from the app: their results are validated where they are called (see itemsFrom(), plainText()). */
     protected ?Closure $recordMenu = null;
 
     protected ?Closure $recordResolver = null;
 
     protected ?Closure $recordTitle = null;
 
-    /** @var array<int, string>|Closure */
+    /** @var array<int, string>|(Closure(): array<int, string>) */
     protected array|Closure $ignoredRecordKeys = ['create'];
 
     /** @var array<int, string>|(Closure(): array<int, string>) */
@@ -97,7 +100,11 @@ class NavItem
         return $item;
     }
 
-    /** A Filament Page: label, icon, URL and access come from the page class. */
+    /**
+     * A Filament Page: label, icon, URL and access come from the page class.
+     *
+     * @param  class-string<Page>  $page
+     */
     public static function page(string $page): static
     {
         return static::make($page::getNavigationLabel())
@@ -110,6 +117,7 @@ class NavItem
      * A Filament Resource: label, icon, list URL and access come from the resource class.
      * Pass URL parameters for a nested resource, e.g. `['project' => $project]`.
      *
+     * @param  class-string<resource>  $resource
      * @param  array<string, mixed>  $parameters
      */
     public static function resource(string $resource, array $parameters = []): static
@@ -122,7 +130,7 @@ class NavItem
             ->visible(fn (): bool => $resource::canViewAny())
             ->ignoreRecordKeys(fn (): array => ['create', ...static::staticRouteSegments($url)])
             ->resolveRecordUsing(fn (string $key): ?Model => $resource::resolveRecordRouteBinding($key))
-            ->recordTitleUsing(fn (Model $record): string => (string) $resource::getRecordTitle($record));
+            ->recordTitleUsing(fn (Model $record): string => static::plainText($resource::getRecordTitle($record)));
     }
 
     /**
@@ -365,7 +373,31 @@ class NavItem
     /** Plain-text label (HTML stripped when the label is Htmlable). */
     public function getLabelText(): string
     {
-        return $this->label instanceof Htmlable ? trim(strip_tags($this->label->toHtml())) : $this->label;
+        return static::plainText($this->label);
+    }
+
+    /** Plain text of a label: HTML stripped from an Htmlable; anything that is not text becomes ''. */
+    protected static function plainText(mixed $value): string
+    {
+        if ($value instanceof Htmlable) {
+            return trim(strip_tags($value->toHtml()));
+        }
+
+        return is_string($value) ? $value : (is_scalar($value) ? (string) $value : '');
+    }
+
+    /**
+     * The NavItems in whatever an app closure returned (anything else is ignored).
+     *
+     * @return array<int, NavItem>
+     */
+    protected static function itemsFrom(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter($value, fn (mixed $item): bool => $item instanceof NavItem));
     }
 
     /**
@@ -566,9 +598,15 @@ class NavItem
 
         $recordHeader = $this->recordHeader;
 
-        return static::make($this->recordTitle ? ($this->recordTitle)($record) : (string) $record)
+        $title = $this->recordTitle !== null ? ($this->recordTitle)($record) : $record;
+
+        return static::make(static::plainText($title))
             ->url($url)
-            ->children(fn (): array => $menu($record))
-            ->header($recordHeader === null ? null : fn (): Htmlable|string|null => $recordHeader($record));
+            ->children(fn (): array => static::itemsFrom($menu($record)))
+            ->header($recordHeader === null ? null : function () use ($recordHeader, $record): Htmlable|string|null {
+                $header = $recordHeader($record);
+
+                return $header instanceof Htmlable || is_string($header) ? $header : null;
+            });
     }
 }

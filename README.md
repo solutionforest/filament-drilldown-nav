@@ -35,7 +35,7 @@ Full explanation with more diagrams (level selection, per-record sequence, nativ
 
 ## Requirements
 
-PHP 8.3+, Laravel 13, Filament **5.10** or later (the oldest version tested in CI).
+PHP 8.3+, Laravel 13, Filament **5.7** or later (the oldest version tested in CI). Run a patched Filament: versions below 5.8.3 have published security advisories, which Composer blocks by default.
 
 ## Install
 
@@ -241,12 +241,33 @@ DrilldownNavPlugin::make()
 |---|---|
 | ![search](docs/screenshots/40-search.png) | ![pinned and recent](docs/screenshots/42-pinned-recent.png) |
 
+## Render hooks: add your own content around the menu
+
+The sidebar exposes [Filament render hooks](https://filamentphp.com/docs/5.x/advanced/render-hooks), so you can add a help link, a workspace switcher or a banner without publishing or overriding the plugin's views:
+
+```php
+use SolutionForest\DrilldownNav\DrilldownNavHook;
+
+$panel
+    ->renderHook(DrilldownNavHook::NAV_END, fn () => view('nav-help-link'))
+    ->renderHook(DrilldownNavHook::HEADER_AFTER, fn (array $data) => view('level-note', ['title' => $data['title']]));
+// or anywhere: FilamentView::registerRenderHook(DrilldownNavHook::NAV_END, fn () => …, scopes: 'admin');
+```
+
+| Hook | Where |
+|---|---|
+| `NAV_START` / `NAV_END` | first / last thing inside the navigation |
+| `HEADER_BEFORE` / `HEADER_AFTER` | around the Back link and title (only on levels that have one) |
+| `LIST_BEFORE` / `LIST_AFTER` | around the list of items |
+
+Every hook is scoped to the id of the panel being rendered, so a hook registered for `admin` never shows in another panel. A closure may declare `array $data`, which holds `plugin`, `panel`, `depth` (0 = top level) and `title`.
+
 ## Multi-panel, Octane, tenants, languages
 
 - **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
 - **Octane / long-lived workers:** safe. Request-specific state (item tree, children, record lookups) lives in a request-scoped binding that is discarded after each request. Pass a **closure** to `items()` so menus can depend on the user, tenant or database; static `NavItem`s built once are fine for static menus. Verified with simulated worker reuse in the tests and with **real Octane workers on RoadRunner, Swoole and FrankenPHP** (run in CI, see Quality).
 - **Tenancy and domains:** Home and Back use `Panel::getUrl($tenant)`, so `https://app.test/admin/{tenant}` and panels on their own domain work. (Demo: `workspace` panel with tenancy on `workspace.localhost`.)
-- **Languages:** "Back" and the navigation landmark are translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어, Español and العربية (right-to-left). Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left is supported: with an RTL locale the chevrons, Back arrow and slide animation mirror (checked in a browser with Arabic).
+- **Languages:** the plugin's own text ("Back", the landmark, search, pin …) is translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어, Español and the right-to-left languages العربية, עברית, فارسی and اردو (Arabic was checked in a browser; Hebrew, Persian and Urdu are machine-written and share the same rules, so a native-speaker review is welcome). Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left is supported: with an RTL locale the chevrons, Back arrow and slide animation mirror (checked in a browser with Arabic).
 
 | Japanese UI | Second panel with its own tree |
 |---|---|
@@ -313,15 +334,17 @@ Log in at `/admin/login` (password `password`, local demo data only):
 ## Quality
 
 ```bash
-composer check                  # Pint + PHPStan (level 9, no baseline) + Pest
+composer check                  # Pint + PHPStan (level 10, no baseline) + Pest
 cd demo && php artisan test     # feature tests: real pages rendered through the panel
 ```
 
 - **Pest** (package): URL matching, level selection, groups, per-record menus, nested sub menus, once-per-request evaluation, ignored keys, failing lookups.
 - **Demo feature tests**: each level, record menus, nested resources, native navigation import, badges, permissions, no duplicates; plus tests on the seeded agency (row counts, real badge numbers, all table pages with real rows, the five-level path, each role's menu, client data isolation, a query budget per page).
-- **PHPStan level 9** on `src/`, with no ignores.
+- **PHPStan level 10** (the strictest level) on `src/`, with no ignores.
 - **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. In addition, `demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a **real one-worker Octane server** and runs 21 checks (two users and three panels alternating over three rounds, a record renamed between requests); CI runs it for all three servers. The script was checked by mutation: making the plugin's request state outlive the request makes it fail.
-- **Languages:** every shipped language is tested for rendering and for having the same keys; Arabic is also checked for `dir="rtl"` and in a browser.
+- **Languages:** every shipped language is tested for rendering and for having the same keys; the four right-to-left languages are checked for `dir="rtl"` and the mirroring rules, and Arabic in a browser.
+- **Filament versions:** the whole demo suite and the real-server smoke test pass on Filament 5.7.0 (the oldest supported) and on the latest 5.x; a CI job runs the oldest.
+- **Clusters:** a Filament cluster next to the plugin appears in the menu and keeps its own sub-navigation (tested).
 - **Search, recent, pinned, limit:** markup, per-user storage keys, translations, and the limit logic are tested; the browser behaviour (typing, filtering, Esc, pinning, clearing, reload) was run in a real browser.
 - **Modern navigation:** expand/collapse state, nesting, headings, dividers, chevrons, the collapsed mode and the focus target are tested in the demo and with a real browser (click, keyboard, reload, collapse); the tests were checked by mutation (breaking the feature makes them fail).
 - CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
@@ -340,7 +363,7 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 - In the sidebar, only items you list (or import with `fromFilamentNavigation()`) are shown.
 - Levels come from the URL (plus `activeOn()` / `activeWhen()`), so a record's pages should live under the record's URL.
 - Search only covers what is on screen; recent and pinned pages are per browser.
-- How Filament clusters and their sub-navigation behave next to the plugin is not tested yet.
+- Pinned pages are per browser; a pinned page that stops opening is dropped by a daily check, not instantly.
 
 ## License
 
