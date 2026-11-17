@@ -11,6 +11,8 @@
 <p align="center">
   <a href="https://github.com/solutionforest/filament-drilldown-nav/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/solutionforest/filament-drilldown-nav?logo=github&label=release&color=f59e0b"></a>
   <a href="https://github.com/solutionforest/filament-drilldown-nav/actions/workflows/tests.yml"><img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/solutionforest/filament-drilldown-nav/tests.yml?branch=main&label=tests&logo=githubactions&logoColor=white"></a>
+  <a href="https://packagist.org/packages/solutionforest/filament-drilldown-nav"><img alt="Packagist version" src="https://img.shields.io/packagist/v/solutionforest/filament-drilldown-nav?logo=packagist&logoColor=white&color=f28d1a"></a>
+  <a href="https://packagist.org/packages/solutionforest/filament-drilldown-nav/stats"><img alt="Total downloads" src="https://img.shields.io/packagist/dt/solutionforest/filament-drilldown-nav?logo=composer&logoColor=white"></a>
   <img alt="PHPStan level 10" src="https://img.shields.io/badge/PHPStan-level%2010-brightgreen?logo=php&logoColor=white">
   <img alt="Filament v5 only" src="https://img.shields.io/badge/Filament-v5%20only-FDAE4B">
   <img alt="PHP 8.3+" src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white">
@@ -91,11 +93,10 @@ The full, maintained table (and what each row means) is in **[docs/support.md](d
 
 ## 📦 Installation
 
-The package is not on Packagist yet; install it from GitHub:
+Install it with Composer from [Packagist](https://packagist.org/packages/solutionforest/filament-drilldown-nav):
 
 ```bash
-composer config repositories.drilldown vcs https://github.com/solutionforest/filament-drilldown-nav
-composer require solutionforest/filament-drilldown-nav:^0.6
+composer require solutionforest/filament-drilldown-nav
 php artisan filament:assets      # publishes the stylesheet (`php artisan filament:upgrade` does it too)
 ```
 
