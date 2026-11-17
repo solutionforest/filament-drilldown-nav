@@ -4,6 +4,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\HtmlString;
 use SolutionForest\DrilldownNav\ChildDisplay;
+use SolutionForest\DrilldownNav\DrilldownNavPlugin;
 use SolutionForest\DrilldownNav\RequestState;
 use SolutionForest\DrilldownNav\Tree\ActivePathResolver;
 use SolutionForest\DrilldownNav\Tree\NavItem;
@@ -251,4 +252,70 @@ it('supports expanded-by-default and an active icon', function () {
 it('has a child display enum with drilldown and inline', function () {
     expect(ChildDisplay::Drilldown->value)->toBe('drilldown')
         ->and(ChildDisplay::Inline->value)->toBe('inline');
+});
+
+/** Large menus: limit() shortens the display only. */
+function numbered(int $count): array
+{
+    return array_map(fn (int $i) => NavItem::make("Item {$i}")->url("/admin/items/{$i}"), range(1, $count));
+}
+
+it('shows everything when the list is within the limit', function () {
+    $item = NavItem::make('Parent')->children(numbered(5))->limit(5, '/all');
+
+    $display = $item->getDisplayChildren();
+
+    expect($display['items'])->toHaveCount(5)->and($display['hidden'])->toBe(0)->and($display['moreUrl'])->toBeNull();
+});
+
+it('shortens a long list to the limit and reports how many are hidden', function () {
+    $item = NavItem::make('Parent')->children(numbered(12))->limit(5, '/admin/items');
+
+    $display = $item->getDisplayChildren();
+
+    expect(array_map(fn (NavItem $i) => $i->getLabelText(), $display['items']))->toBe(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'])
+        ->and($display['hidden'])->toBe(7)
+        ->and($display['moreUrl'])->toBe('/admin/items');
+});
+
+it('never hides the child that contains the current page', function () {
+    $children = numbered(12);
+    $item = NavItem::make('Parent')->children($children)->limit(3);
+
+    $display = $item->getDisplayChildren([spl_object_id($children[9])]); // "Item 10" is the current page
+
+    expect(array_map(fn (NavItem $i) => $i->getLabelText(), $display['items']))->toBe(['Item 1', 'Item 2', 'Item 3', 'Item 10'])
+        ->and($display['hidden'])->toBe(8);
+});
+
+it('still matches the URL of a child that is not displayed', function () {
+    $tree = [NavItem::make('Parent')->url('/admin/items')->children(numbered(12))->limit(3)];
+
+    $r = new ActivePathResolver;
+    $resolved = $r->resolve($tree, '/admin/items/11', '/admin');
+
+    expect(array_map(fn (NavItem $i) => $i->getLabelText(), $resolved['path']))->toBe(['Parent', 'Item 11']);
+});
+
+it('clamps a nonsensical limit to at least one child', function () {
+    $display = NavItem::make('P')->children(numbered(3))->limit(0)->getDisplayChildren();
+
+    expect($display['items'])->toHaveCount(1)->and($display['hidden'])->toBe(2);
+});
+
+it('exposes the plugin options for search, recent and pinned items', function () {
+    $plugin = new DrilldownNavPlugin;
+
+    expect($plugin->isSearchable())->toBeFalse()
+        ->and($plugin->getRecentLimit())->toBe(0)
+        ->and($plugin->isPinnable())->toBeFalse();
+
+    $plugin->searchable(minItems: 8)->recent(7)->pinnable();
+
+    expect($plugin->isSearchable())->toBeTrue()
+        ->and($plugin->getSearchMinItems())->toBe(8)
+        ->and($plugin->getRecentLimit())->toBe(7)
+        ->and($plugin->isPinnable())->toBeTrue();
+
+    expect($plugin->recent(-3)->getRecentLimit())->toBe(0);
 });

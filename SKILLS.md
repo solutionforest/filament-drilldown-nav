@@ -84,6 +84,15 @@ DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)->items(...);  // 
 - Collapsed icon-only mode comes with the panel's `->sidebarCollapsibleOnDesktop()`: **give top-level items icons**.
 - Keep headings/dividers out of URL logic: they have no URL by design.
 
+## Large menus (search, recent, pinned, limit)
+
+```php
+DrilldownNavPlugin::make()->searchable(minItems: 6)->recent(5)->pinnable()->items(...);
+NavItem::make('Projects')->children(fn () => [...])->limit(5, $allProjectsUrl);   // first 5 + "View all (N)"
+```
+
+- Search filters only what is on screen; recent/pinned are per browser, panel and user; `limit()` shortens the display only (keep your query small).
+
 ## Multi-panel, Octane, tenants, languages
 
 - Register the plugin on as many panels as you like, each with its own `items()`. Panels without it are untouched.

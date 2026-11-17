@@ -17,6 +17,8 @@ use WeakMap;
  * outside a closure alive between requests, so nothing request-specific may be stored on
  * them. This object is bound as a *scoped* singleton: the container discards it after each
  * request, and memoized values go with it.
+ *
+ * @internal Not part of the public API: it may change in any release. See docs/api-stability.md.
  */
 final class RequestState
 {

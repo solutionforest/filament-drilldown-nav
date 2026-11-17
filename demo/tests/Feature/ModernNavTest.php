@@ -131,7 +131,7 @@ class ModernNavTest extends TestCase
         $this->assertStringContainsString('x-show="$store.sidebar.isOpen"', $title[0]);
 
         $root = (string) $this->visit('/admin')->getContent();
-        $this->assertMatchesRegularExpression('#<li class="fi-drilldown-heading"[^>]*x-show="\$store\.sidebar\.isOpen"#', $root);
+        $this->assertMatchesRegularExpression('#<li class="fi-drilldown-heading"[^>]*x-show="\$store\.sidebar\.isOpen#', $root);
     }
 
     public function test_level_title_is_a_focus_target_for_keyboard_and_screen_readers(): void

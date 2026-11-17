@@ -54,6 +54,10 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
 
 `demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a real one-worker Octane server and verifies per-request isolation with 21 checks (`demo/bin/octane-smoke.php`). Run it after any change to `RequestState`, the plugin's hooks or anything that caches. It needs `DEMO_AUTOLOGIN=true`, which the script sets; that demo-only login route exists only when the variable is set and the app runs in `local`/`testing`. CI runs it for all three servers.
 
+## API stability
+
+Public API vs `@internal` is defined in `docs/api-stability.md`; keep it and `CHANGELOG.md` current in every PR that changes behaviour (add an entry under *Unreleased*). Do not remove or rename a public method without a changelog line under *Changed*/*Removed*.
+
 ## Views (Blade) rules
 
 - **Never put `@if`/`@foreach` inside a Blade component tag** (`<x-filament::icon ... @if ... />`): Blade swallows the whole tag silently. Wrap the component in a plain element that carries the directive/`x-show` instead (this once made every chevron disappear while all tests passed).
