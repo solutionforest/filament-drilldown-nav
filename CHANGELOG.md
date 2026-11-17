@@ -5,6 +5,7 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 ## [Unreleased]
 
 ### Changed
+- Every read accessor on `NavItem` and `DrilldownNavPlugin` is tagged `@internal` (43 methods): they serve the sidebar view and its Livewire endpoints and may change. `docs/api-stability.md` has the freeze review and the decisions left before 1.0.0-rc1.
 - The **Pinned** list moved to the top of the top level (it was below the menu). Recent stays below.
 - The open/closed state of inline sections is stored in a `fi-drilldown-open` cookie (excluded from cookie encryption, validated when read) instead of `localStorage`, and **rendered on the server**: a closed section no longer shows open until JavaScript starts. Previously stored states are not carried over.
 
