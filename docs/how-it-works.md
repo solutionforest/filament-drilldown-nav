@@ -6,7 +6,7 @@ This page explains **what problem the plugin solves**, **how a request turns int
 
 Filament's sidebar shows the whole tree at once, and sub-navigation for one cluster or page sits *next to the content* as a second menu. That works for two levels. It breaks down when:
 
-- an area has its own menu ("click an project → Tasks, Files, Settings");
+- an area has its own menu ("click a project → Tasks, Files, Settings");
 - those items have sub menus (Files → Documents, Links), and you want 3–4 levels;
 - you want the menu to stay in **one place** (the left sidebar), not split across two.
 
@@ -95,7 +95,7 @@ sequenceDiagram
 
 A failing lookup (for example a non-numeric key on a PostgreSQL integer column) is treated as "no such record", so such URLs fall back to the top level instead of erroring.
 
-The record node takes its header from `recordHeader()`, called with the record when that level is rendered; without one, the level shows Back and the record title. Separately, `activeOn()` gives any item extra URLs: the resolver tries the item's own URL and these the same way (prefix, or exact only for the panel root and ancestor URLs), and the longest match counts. So a list at `/agents/5/sources` can stay current on `/agents/5/knowledge/9/edit`.
+The record node takes its header from `recordHeader()`, called with the record when that level is rendered; without one, the level shows Back and the record title. Separately, `activeOn()` gives any item extra URLs: the resolver tries the item's own URL and these the same way (prefix, or exact only for the panel root and ancestor URLs), and the longest match counts. So a list at `/projects/5/files` can stay current on `/projects/5/documents/9/edit`.
 
 ## 4. Reusing Filament's navigation
 

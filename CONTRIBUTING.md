@@ -17,13 +17,16 @@ The demo (`demo/`) is a Laravel 13 + Filament 5 app wired to the package through
 ```bash
 vendor/bin/pest                                   # package tests
 vendor/bin/pint --test                            # code style (Laravel preset)
+php bin/api-reference.php > docs/api-reference.md  # regenerate the API reference when you change a public method
 vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 10, no ignores, no baseline
 (cd demo && php artisan test)                     # demo feature tests (real panels)
 ```
 
 - **Every behaviour change needs a test.** Resolver logic: `tests/ActivePathResolverTest.php`. Anything rendered: a feature test in `demo/tests/Feature`.
 - **Update `CHANGELOG.md`** under `## [Unreleased]` (Added / Changed / Fixed / Removed). A release can't be tagged without its entry (see below).
-- **Public API changes** follow [`docs/api-stability.md`](docs/api-stability.md).
+- **Public API changes** follow [`docs/api-stability.md`](docs/api-stability.md). Changed or added a public method? Regenerate the reference: `php bin/api-reference.php > docs/api-reference.md` (a test fails otherwise).
+- **Changing a supported version** (Filament, PHP)? Follow the checklist in [`docs/support.md`](docs/support.md); `tests/DocsTest.php` fails when `composer.json`, the support matrix, the README and the CI job disagree.
+- **Docs are tested:** every relative link and image must exist, and every page in `docs/` must be listed in `docs/README.md`.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:` …).
 - More detail on the code layout and rules: [`AGENTS.md`](AGENTS.md).
 
