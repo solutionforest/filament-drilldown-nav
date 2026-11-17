@@ -11,8 +11,11 @@ use Filament\Livewire\Sidebar;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use LogicException;
 use SolutionForest\DrilldownNav\Livewire\DrilldownSidebar;
+use SolutionForest\DrilldownNav\Models\DrilldownPin;
 use SolutionForest\DrilldownNav\Tree\NativeNavigation;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
@@ -36,6 +39,14 @@ class DrilldownNavPlugin implements Plugin
     protected int $recentLimit = 0;
 
     protected bool $pinnable = false;
+
+    protected bool $pinsInDatabase = false;
+
+    /** @var class-string<DrilldownPin> */
+    protected string $pinModel = DrilldownPin::class;
+
+    /** Most pins kept per user, panel and tenant. */
+    public const MAX_PINS = 20;
 
     protected ?string $pollInterval = null;
 
@@ -206,12 +217,143 @@ class DrilldownNavPlugin implements Plugin
         return $this;
     }
 
-    /** A "Pin this page" toggle, and a "Pinned" list at the top level (per browser and user). */
-    public function pinnable(bool $pinnable = true): static
+    /**
+     * A "Pin this page" toggle, and a "Pinned" list at the top of the top level.
+     *
+     * By default pins live in the browser (per panel, tenant and user). With $database they are stored in
+     * the `drilldown_nav_pins` table (publish and run the migration: `php artisan vendor:publish
+     * --tag=filament-drilldown-nav-migrations && php artisan migrate`): they follow the user across
+     * devices and are rendered by the server. $model lets you use your own model on the same table.
+     *
+     * @param  string|null  $model  a subclass of DrilldownPin
+     */
+    public function pinnable(bool $pinnable = true, bool $database = false, ?string $model = null): static
     {
         $this->pinnable = $pinnable;
+        $this->pinsInDatabase = $database;
+
+        if ($model !== null) {
+            if (! is_a($model, DrilldownPin::class, true)) {
+                throw new \InvalidArgumentException('pinnable(model:) expects a subclass of '.DrilldownPin::class.'.');
+            }
+
+            $this->pinModel = $model;
+        }
 
         return $this;
+    }
+
+    /** Pins are stored in the database (and a user is signed in). */
+    public function storesPinsInDatabase(): bool
+    {
+        return $this->pinnable && $this->pinsInDatabase && auth()->user() !== null;
+    }
+
+    /**
+     * The signed-in user's pins for this panel and tenant, newest first.
+     *
+     * @return list<array{url: string, label: string}>
+     */
+    public function getPins(): array
+    {
+        $query = $this->pinQuery();
+
+        if ($query === null) {
+            return [];
+        }
+
+        return array_values($query->latest('id')->limit(self::MAX_PINS)->get()
+            ->map(fn (DrilldownPin $pin): array => ['url' => $pin->url, 'label' => $pin->label])
+            ->all());
+    }
+
+    /**
+     * Pin or unpin a page. The URL must be a path under this panel (and tenant), like the pages the
+     * sidebar links to; anything else is ignored.
+     *
+     * @return list<array{url: string, label: string}> the pins afterwards
+     */
+    public function togglePin(string $url, string $label): array
+    {
+        $query = $this->pinQuery();
+
+        if ($query === null || ! $this->isPinnableUrl($url)) {
+            return $this->getPins();
+        }
+
+        $existing = (clone $query)->where('url_hash', sha1($url))->first();
+
+        if ($existing !== null) {
+            $existing->delete();
+        } else {
+            $query->create([...$this->pinOwner(), 'url' => $url, 'url_hash' => sha1($url), 'label' => mb_substr(trim($label), 0, 120)]);
+            // keep the newest MAX_PINS
+            $keep = (clone $query)->latest('id')->limit(self::MAX_PINS)->pluck('id')->all();
+            (clone $query)->whereNotIn('id', $keep)->delete();
+        }
+
+        return $this->getPins();
+    }
+
+    /** @return list<array{url: string, label: string}> the pins afterwards */
+    public function forgetPin(string $url): array
+    {
+        $this->pinQuery()?->where('url_hash', sha1($url))->delete();
+
+        return $this->getPins();
+    }
+
+    /** Keep a pinned page's label current while the user is on it. */
+    public function refreshPinLabel(string $url, string $label): void
+    {
+        $label = mb_substr(trim($label), 0, 120);
+
+        if ($label !== '') {
+            $this->pinQuery()?->where('url_hash', sha1($url))->where('label', '!=', $label)->update(['label' => $label]);
+        }
+    }
+
+    protected function isPinnableUrl(string $url): bool
+    {
+        if (! str_starts_with($url, '/') || str_starts_with($url, '//') || strlen($url) > 2000 || preg_match('/[\x00-\x1F\\\\]/', $url) === 1) {
+            return false;
+        }
+
+        $root = Tree\ActivePathResolver::normalise($this->getRootUrl());
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?? '');
+
+        return $root === '/' || $path === $root || str_starts_with($path, $root.'/');
+    }
+
+    /** @return array{user_type: string, user_id: string, panel: string, tenant: string} */
+    protected function pinOwner(): array
+    {
+        $user = auth()->user();
+        $id = $user?->getAuthIdentifier();
+        $tenantKey = Filament::getTenant()?->getKey();
+
+        return [
+            'user_type' => $user instanceof Model ? $user->getMorphClass() : '',
+            'user_id' => is_int($id) || is_string($id) ? (string) $id : '',
+            'panel' => $this->panelId,
+            'tenant' => is_int($tenantKey) || is_string($tenantKey) ? (string) $tenantKey : '',
+        ];
+    }
+
+    /** @return Builder<DrilldownPin>|null */
+    protected function pinQuery(): ?Builder
+    {
+        if (! $this->storesPinsInDatabase()) {
+            return null;
+        }
+
+        $owner = $this->pinOwner();
+
+        if ($owner['user_id'] === '') {
+            return null;
+        }
+
+        return $this->pinModel::query()->where($owner);
     }
 
     /**

@@ -279,7 +279,10 @@ DrilldownNavPlugin::make()
       ->where('depth', 0)->take(4)
       ->map(fn (array $page) => MobileBottomNavItem::make($page['label'])->url($page['url']))->all());
   ```
-- **Recent / Pinned** *(experimental, may change before 1.0)* are stored in the browser per panel, tenant and user, show at the top level, and remember the page's trail (e.g. "Website redesign › Tasks"). The pin toggle appears on every level. Only entries under the current panel (and tenant) URL are shown. They are links, not permissions: a pinned page the user can no longer open still shows until it is unpinned, and opening it gets Filament's usual 403/404.
+- **Pinned pages in the database:** `->pinnable(database: true)` stores pins in a `drilldown_nav_pins` table per user, panel and tenant, so they follow the user to every device and are rendered by the server (no empty list until JavaScript runs). Publish and run the migration once: `php artisan vendor:publish --tag=filament-drilldown-nav-migrations && php artisan migrate`. Use your own model on the same table with `pinnable(database: true, model: MyPin::class)` (it must extend `SolutionForest\DrilldownNav\Models\DrilldownPin`). Only paths under the panel (and tenant) can be pinned; at most 20 per user; the label of a pinned page is updated when the user visits it. The **Pinned** list sits at the top of the top level. (Demo: the `auto` panel.)
+
+  ![pinned pages from the database](docs/screenshots/53-pinned-database.png)
+- **Recent / Pinned** *(experimental, may change before 1.0)* are otherwise stored in the browser per panel, tenant and user, show at the top level, and remember the page's trail (e.g. "Website redesign › Tasks"). The pin toggle appears on every level. Only entries under the current panel (and tenant) URL are shown. They are links, not permissions: a pinned page the user can no longer open still shows until it is unpinned, and opening it gets Filament's usual 403/404.
 - **`->limit($max, $moreUrl)`** shortens the **display** of a long child list; it does not make big menus cheaper. All children still take part in URL matching and the child containing the current page is never hidden, so the sidebar stays correct. Keep your own query small (`limit()` on the query): it shortens the display, it does not avoid loading the rows.
 
 | Search | Pinned + Recent |

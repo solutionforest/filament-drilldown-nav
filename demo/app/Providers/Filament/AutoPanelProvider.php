@@ -37,7 +37,7 @@ class AutoPanelProvider extends PanelProvider
             ->login()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->pages([Dashboard::class])
-            ->plugin(DrilldownNavPlugin::make()->pollBadges('30s')->items(fn () => [
+            ->plugin(DrilldownNavPlugin::make()->pollBadges('30s')->pinnable(database: true)->items(fn () => [
                 NavItem::page(Dashboard::class),
                 NavItem::resource(ClientResource::class),
                 NavItem::resource(ProjectResource::class)->recordPages(),

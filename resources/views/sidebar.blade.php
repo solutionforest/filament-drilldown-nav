@@ -68,7 +68,16 @@
         'recentLimit' => $recentLimit,
         'pinnable' => $pinnable,
         'label' => $resolved['path'] === [] ? null : $currentTrail,
+        // pinnable(database: true): pins come from the server (first paint, every device).
+        'database' => $pinsInDatabase = $plugin->storesPinsInDatabase(),
     ];
+
+    if ($pinsInDatabase) {
+        if ($shortcuts['label'] !== null) {
+            $plugin->refreshPinLabel(\Filament\Support\original_request()->getRequestUri(), $shortcuts['label']);
+        }
+        $shortcuts['pins'] = $plugin->getPins();
+    }
 
     // Render hooks (see DrilldownNavHook): scoped to this panel, with the level's data.
     $hookScopes = [$plugin->getPanelId()];
@@ -151,6 +160,10 @@
         get here() { return { url: location.pathname + location.search, label: this.shortcuts.label } },
         get isPinned() { return this.pinned.some((entry) => entry.url === this.here.url) },
         togglePin() {
+            if (this.shortcuts.database) {
+                this.$wire.drilldownTogglePin(this.here.url, this.here.label ?? '').then((pins) => { this.pinned = Array.isArray(pins) ? pins : this.pinned })
+                return
+            }
             this.pinned = this.isPinned ? this.pinned.filter((entry) => entry.url !== this.here.url) : [this.here, ...this.pinned].slice(0, 20)
             this.write('pinned', this.pinned)
         },
@@ -172,6 +185,7 @@
                 try {
                     const response = await fetch(entry.url, { method: 'HEAD', credentials: 'same-origin', redirect: 'manual' })
                     if ([403, 404, 410].includes(response.status)) {
+                        if (this.shortcuts.database) { this.$wire.drilldownForgetPin(entry.url) }
                         this.pinned = this.pinned.filter((pin) => pin.url !== entry.url)
                         delete checked[entry.url]
                         changed = true
@@ -180,12 +194,12 @@
                     checked[entry.url] = now
                 } catch (e) { /* offline: keep it */ }
             }
-            if (changed) { this.write('pinned', this.pinned) }
+            if (changed && ! this.shortcuts.database) { this.write('pinned', this.pinned) }
             try { localStorage.setItem(this.shortcuts.key + ':checked', JSON.stringify(checked)) } catch (e) {}
         },
         init() {
             if (this.shortcuts.pinnable) {
-                this.pinned = this.read('pinned')
+                this.pinned = this.shortcuts.database ? (this.shortcuts.pins ?? []) : this.read('pinned')
                 if (this.pinned.length) { (window.requestIdleCallback ?? ((callback) => setTimeout(callback, 1500)))(() => this.verifyPinned()) }
             }
             if (this.shortcuts.recentLimit > 0) {
@@ -270,6 +284,22 @@
         {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::HEADER_AFTER) !!}
     @endif
 
+    @if ($pinnable && $level['depth'] === 0)
+        {{-- Pinned pages first, at the top of the top level. --}}
+        <div class="fi-drilldown-pinned" x-show="! searching" @if ($collapsible) x-show.important="$store.sidebar.isOpen" @endif>
+            <template x-if="pinned.length">
+                <div>
+                    <div class="fi-drilldown-heading">{{ __('filament-drilldown-nav::messages.pinned') }}</div>
+                    <ul class="fi-drilldown-shortcut-list">
+                        <template x-for="entry in pinned" :key="entry.url">
+                            <li><a :href="entry.url" @if ($spa) wire:navigate @endif class="fi-drilldown-shortcut" x-text="entry.label"></a></li>
+                        </template>
+                    </ul>
+                </div>
+            </template>
+        </div>
+    @endif
+
     {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::LIST_BEFORE) !!}
 
     <ul class="fi-drilldown-list" :data-direction="direction">
@@ -303,20 +333,9 @@
     @endif
 
     @if ($recentLimit > 0 || $pinnable)
+        {{-- Recent pages (top level) and the pin toggle (every level). --}}
         <div class="fi-drilldown-shortcuts" x-show="! searching" @if ($collapsible) x-show.important="$store.sidebar.isOpen" @endif>
             @if ($level['depth'] === 0)
-                @if ($pinnable)
-                    <template x-if="pinned.length">
-                        <div>
-                            <div class="fi-drilldown-heading">{{ __('filament-drilldown-nav::messages.pinned') }}</div>
-                            <ul class="fi-drilldown-shortcut-list">
-                                <template x-for="entry in pinned" :key="entry.url">
-                                    <li><a :href="entry.url" @if ($spa) wire:navigate @endif class="fi-drilldown-shortcut" x-text="entry.label"></a></li>
-                                </template>
-                            </ul>
-                        </div>
-                    </template>
-                @endif
                 @if ($recentLimit > 0)
                     <template x-if="recent.length">
                         <div>
