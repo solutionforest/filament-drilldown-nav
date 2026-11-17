@@ -90,4 +90,4 @@ Public API vs `@internal` is defined in `docs/api-stability.md`; keep it and `CH
 
 ## CI
 
-`.github/workflows/tests.yml` runs on a **self-hosted** runner (PHP 8.3+, Composer). Fork pull requests are skipped on purpose, so untrusted code never runs on the runner.
+`.github/workflows/tests.yml` runs on GitHub-hosted `ubuntu-latest` runners (PHP 8.3 via `shivammathur/setup-php`), including fork pull requests, with a read-only token.

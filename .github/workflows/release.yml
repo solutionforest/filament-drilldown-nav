@@ -10,7 +10,7 @@ permissions:
 jobs:
   release:
     name: Changelog check and GitHub release
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Changelog entry for this tag

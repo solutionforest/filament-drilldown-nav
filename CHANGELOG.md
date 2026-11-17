@@ -4,6 +4,9 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- CI runs on GitHub-hosted runners (`ubuntu-latest`), including pull requests from forks; the workflow token is read-only.
+
 ## [0.6.0] - 2026-11-17
 
 ### Documentation and repository
