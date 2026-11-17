@@ -75,6 +75,10 @@
         'inlineByDefault' => $inlineByDefault,
         'collapsible' => $collapsible,
         'spa' => $spa,
+        // Open/closed state of inline sections, read on the server (cookie) so the first paint is right.
+        'openState' => $plugin->getOpenState(),
+        'accordion' => $plugin->isAccordion(),
+        'panelId' => $plugin->getPanelId(),
     ];
 @endphp
 
@@ -275,4 +279,9 @@
         </div>
     @endif
     {!! $hook(\SolutionForest\DrilldownNav\DrilldownNavHook::NAV_END) !!}
+
+    @if ($pollInterval = $plugin->getPollInterval())
+        {{-- re-renders the sidebar component (badges, titles) on an interval; see DrilldownNavPlugin::pollBadges() --}}
+        <span wire:poll.{{ $pollInterval }} class="fi-drilldown-poll" aria-hidden="true"></span>
+    @endif
 </nav>

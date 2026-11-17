@@ -52,18 +52,18 @@ class ModernNavTest extends TestCase
         $team = $this->section($this->visit('/admin/demo/team/members'), 'Team');
 
         $this->assertStringContainsString('fi-sidebar-item-has-active-child-items', $team);
-        $this->assertStringContainsString('open: true ||', $team);
+        $this->assertStringContainsString('open: true,', $team);
         $this->assertMatchesRegularExpression('#aria-current="page"#', $team);
     }
 
     public function test_other_sections_stay_collapsed_unless_default_expanded(): void
     {
         $subscription = $this->section($this->visit('/admin/demo/team/members'), 'Subscription');
-        $this->assertStringContainsString('open: false ||', $subscription);
-        $this->assertStringContainsString("?? '0'", $subscription); // remembered state, collapsed by default
+        $this->assertStringContainsString('open: false,', $subscription);
+        $this->assertStringContainsString('fi-drilldown-collapsed', $subscription); // hidden before Alpine boots
 
         $team = $this->section($this->visit('/admin/demo/subscription/overview'), 'Team');
-        $this->assertStringContainsString("?? '1'", $team); // ->defaultExpanded()
+        $this->assertStringContainsString('open: true,', $team); // ->defaultExpanded()
     }
 
     public function test_nested_sections_expand_down_to_the_current_page(): void
@@ -73,7 +73,7 @@ class ModernNavTest extends TestCase
 
         $this->assertStringNotContainsString('class="fi-drilldown-back"', $html);
         $subscription = $this->section($response, 'Subscription');
-        $this->assertSame(2, substr_count($subscription, 'open: true ||'), 'Subscription and Invoices are both open');
+        $this->assertSame(2, substr_count($subscription, 'open: true,'), 'Subscription and Invoices are both open');
         $this->assertStringContainsString('Unpaid', $subscription);
     }
 
@@ -117,7 +117,7 @@ class ModernNavTest extends TestCase
 
         $deep = (string) $this->visit('/portal/demo/support/tickets')->getContent();
         $this->assertStringNotContainsString('class="fi-drilldown-back"', $deep);
-        $this->assertStringContainsString('open: true ||', $deep);
+        $this->assertStringContainsString('open: true,', $deep);
     }
 
     public function test_collapsed_icon_only_mode_hides_text_and_adds_a_tooltip(): void

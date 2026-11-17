@@ -121,6 +121,31 @@ Record-menu URLs must live under the resource's own URL (`/admin/projects/{recor
 'section' => ProjectSection::route('/{record}/{section}'),
 ```
 
+#### Less code: a menu from the resource's own pages
+
+Two shortcuts, so a record menu does not have to be written by hand:
+
+```php
+// 1. Build it from the resource's record pages: View, Edit, Manage… related records, custom /{record}/… pages.
+//    Labels, icons, badges and access come from each page (getNavigationLabel(), canAccess() …),
+//    exactly as Filament builds a record's sub-navigation. Pass page classes to choose and order them.
+NavItem::resource(ProjectResource::class)->recordPages();
+NavItem::resource(ProjectResource::class)->recordPages([ViewProject::class, ManageProjectTasks::class]);
+
+// 2. Or let the resource declare its menu itself, next to its pages; NavItem::resource() then needs nothing else.
+class ClientResource extends Resource implements \SolutionForest\DrilldownNav\Contracts\HasDrilldownRecordMenu
+{
+    public static function drilldownRecordMenu(Model $record): array
+    {
+        return [NavItem::make('Overview')->url(static::getUrl('view', ['record' => $record])), /* … */];
+    }
+}
+```
+
+`recordPages()` leaves out pages whose route needs more than the record (like `/{record}/{section}`). An explicit `->record()` or `->recordPages()` on the item wins over the resource's own menu. (Demo: the `auto` panel at `/auto`.)
+
+![record menu from the resource's pages](docs/screenshots/50-record-pages.png)
+
 For a non-resource item use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`. Fixed pages below the list URL (like `/projects/import`) are never mistaken for a record: they are excluded automatically for `resource()`, or with `->ignoreRecordKeys(['create', 'import'])`.
 
 #### Your own header for a level
@@ -178,6 +203,13 @@ NavItem::make('Inbox')->badge(fn () => (string) Message::unread()->count(), 'dan
 
 Empty groups disappear. Closures run once per request, and only for items on the current path.
 
+**Live updates.** The sidebar is a Livewire component, so it can refresh without a page load, on the same level:
+
+```php
+DrilldownNavPlugin::make()->pollBadges('30s');   // re-render every 30 s (paused by Livewire in background tabs)
+$this->dispatch('refresh-sidebar');                // or refresh right after a change, from any Livewire component
+```
+
 ## Modern navigation: click to expand, lines, icons, sections
 
 Besides drilling into a new level, an item's children can **expand in place**, like a classic tree:
@@ -188,6 +220,7 @@ NavItem::heading('Workspace')->divider(),                       // section headi
 NavItem::make('Team')->icon('heroicon-o-users')
     ->inline()                                                  // children expand under the item
     ->defaultExpanded()                                         // start open (otherwise: closed, remembered)
+// DrilldownNavPlugin::make()->accordion()                      // only one section open at a time
     ->children([
         NavItem::make('Members')->url('/admin/team/members')->badge('8'),
         NavItem::make('Invitations')->url('/admin/team/invitations')->badge('2', 'warning'),
@@ -204,10 +237,11 @@ NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->childre
 | `->inline()` / `->drilldown()` | per item: expand in place, or open a new level (the default) |
 | `DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)` | change the default for the whole panel (items can still override) |
 | `->defaultExpanded()` | inline items start open; otherwise the open/closed state is remembered per browser |
+| `DrilldownNavPlugin::accordion()` | only one inline section open at a time within the same parent; opening one closes its siblings |
 | `NavItem::heading('…')`, `->divider()` | non-clickable section headings and separator lines |
 | `->icon()`, `->activeIcon()`, `->badge()` | icons (outline/solid when current) and badges; icon-less nested items get Filament's guide line and dot |
 
-What you get without extra code: the section containing the current page is **open** and its parents marked; guide lines for nested items (Filament's own style); chevrons that rotate; state remembered across page loads; **collapsed (icon-only) sidebar** when the panel uses `->sidebarCollapsibleOnDesktop()` (labels, titles and badges hide, Back keeps its arrow with a tooltip, tooltips on items); keyboard-operable toggle buttons with `aria-expanded`; `aria-current="page"` on the current item; a labelled `nav` landmark; focus moves to the new level's title when you drill in or out; `prefers-reduced-motion` respected; and mirrored chevrons, Back arrow and animation for right-to-left pages (checked with Arabic).
+What you get without extra code: the section containing the current page is **open** and its parents marked; guide lines for nested items (Filament's own style); chevrons that rotate; state remembered across page loads **and rendered by the server** (a `fi-drilldown-open` cookie, so a closed section never flashes open on load); **collapsed (icon-only) sidebar** when the panel uses `->sidebarCollapsibleOnDesktop()` (labels, titles and badges hide, Back keeps its arrow with a tooltip, tooltips on items); keyboard-operable toggle buttons with `aria-expanded`; `aria-current="page"` on the current item; a labelled `nav` landmark; focus moves to the new level's title when you drill in or out; `prefers-reduced-motion` respected; and mirrored chevrons, Back arrow and animation for right-to-left pages (checked with Arabic).
 
 | Expand in place (`->inline()`) | Nested, with guide lines |
 |---|---|

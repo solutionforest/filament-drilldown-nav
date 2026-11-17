@@ -49,17 +49,36 @@
 
     @if ($inline)
         @php
-            $key = 'fi-drilldown-open:'.md5($labelText.'|'.$item->getUrl());
+            // Short, stable key per section and panel (stored in the `fi-drilldown-open` cookie).
+            $key = substr(md5($ctx['panelId'].'|'.$labelText.'|'.$item->getUrl()), 0, 10);
+            $parentKey = $parentKey ?? 'root';
             $url = $item->getUrl();
             $panelOpen = $collapsible ? '$store.sidebar.isOpen' : 'true';
             $shown = $nested ? 'open' : 'open && '.$panelOpen;
+            // On the current path: always open. Otherwise the stored choice, then the default.
+            // With ->accordion(), only sections on the current path start open.
+            $initiallyOpen = $onPath || (! $ctx['accordion'] && ($ctx['openState'][$key] ?? $item->isDefaultExpanded()));
         @endphp
         <li
             class="fi-sidebar-item fi-drilldown-inline @if ($isCurrent) fi-active @endif @if ($onPath && ! $isCurrent) fi-sidebar-item-has-active-child-items @endif"
             x-data="{
-                open: {{ $onPath ? 'true' : 'false' }} || (localStorage.getItem(@js($key)) ?? @js($item->isDefaultExpanded() ? '1' : '0')) === '1',
+                open: @js($initiallyOpen),
+                remember(value) {
+                    let state = {}
+                    try { state = JSON.parse(decodeURIComponent((document.cookie.match(/(?:^|; )fi-drilldown-open=([^;]*)/) || [])[1] || '{}')) || {} } catch (e) {}
+                    delete state[@js($key)]
+                    state[@js($key)] = value ? 1 : 0
+                    const keys = Object.keys(state)
+                    keys.slice(0, Math.max(0, keys.length - 100)).forEach((k) => delete state[k])
+                    document.cookie = 'fi-drilldown-open=' + encodeURIComponent(JSON.stringify(state)) + '; path=/; max-age=31536000; SameSite=Lax'
+                },
             }"
-            x-init="$watch('open', value => localStorage.setItem(@js($key), value ? '1' : '0'))"
+            x-init="$watch('open', (value) => {
+                remember(value)
+                @if ($ctx['accordion']) if (value) { $dispatch('fi-drilldown-accordion', { parent: @js($parentKey), key: @js($key) }) } @endif
+            })"
+            @if ($ctx['accordion']) x-on:fi-drilldown-accordion.window="if ($event.detail.parent === @js($parentKey) && $event.detail.key !== @js($key)) { open = false }" @endif
+            data-section="{{ $key }}"
             {{ $searchAttrs }}
         >
             <div class="fi-drilldown-inline-row">
@@ -98,9 +117,10 @@
             </div>
 
             @php $displayed = $item->getDisplayChildren($ctx['pathIds']); @endphp
-            <ul x-show="({{ $shown }}){{ $ctx['searchable'] ? ' || searching' : '' }}" x-collapse class="fi-sidebar-sub-group-items fi-drilldown-inline-children">
+            {{-- Closed sections are hidden by a class until Alpine takes over, so nothing flashes open on load. --}}
+            <ul x-show="({{ $shown }}){{ $ctx['searchable'] ? ' || searching' : '' }}" x-collapse x-init="$el.classList.remove('fi-drilldown-collapsed')" class="fi-sidebar-sub-group-items fi-drilldown-inline-children @if (! $initiallyOpen) fi-drilldown-collapsed @endif">
                 @foreach ($displayed['items'] as $child)
-                    @include('filament-drilldown-nav::item', ['item' => $child, 'ctx' => $ctx, 'nested' => true, 'first' => $loop->first, 'last' => $loop->last, 'ancestors' => trim($ancestors.' '.$lower)])
+                    @include('filament-drilldown-nav::item', ['item' => $child, 'ctx' => $ctx, 'nested' => true, 'first' => $loop->first, 'last' => $loop->last, 'ancestors' => trim($ancestors.' '.$lower), 'parentKey' => $key])
                 @endforeach
 
                 @include('filament-drilldown-nav::more', ['hidden' => $displayed['hidden'], 'moreUrl' => $displayed['moreUrl'], 'ctx' => $ctx])

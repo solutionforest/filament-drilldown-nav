@@ -4,10 +4,16 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- The open/closed state of inline sections is stored in a `fi-drilldown-open` cookie (excluded from cookie encryption, validated when read) instead of `localStorage`, and **rendered on the server**: a closed section no longer shows open until JavaScript starts. Previously stored states are not carried over.
+
 ### Fixed
 - Content from the sidebar's render hooks was not hidden in the collapsed (icon-only) sidebar, so free text widened the icon rail (to about 250 px in the demo). Hook output is now wrapped in `.fi-drilldown-hook` and shown only while a collapsible sidebar is open.
 
 ### Added
+- **Record menus with less code:** `NavItem::resource(X)->recordPages()` builds a record's menu from the resource's own record pages (labels, icons, badges and access from each page, as Filament builds a record's sub-navigation); or implement `Contracts\HasDrilldownRecordMenu` on the resource. Demo: the new `auto` panel.
+- **Live updates:** `DrilldownNavPlugin::pollBadges('30s')` re-renders the sidebar on an interval; `refresh-sidebar` keeps working.
+- **`DrilldownNavPlugin::accordion()`:** one inline section open at a time.
 - `docs/compatibility.md`: checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav (all work; Hover Sidebar and Sidebar Resize conflict with each other).
 
 ## [0.5.0] - 2026-11-17

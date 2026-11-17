@@ -13,6 +13,8 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
+use LogicException;
+use SolutionForest\DrilldownNav\Contracts\HasDrilldownRecordMenu;
 use SolutionForest\DrilldownNav\RequestState;
 
 class NavItem
@@ -49,6 +51,9 @@ class NavItem
 
     /** Closures from the app: their results are validated where they are called (see itemsFrom(), plainText()). */
     protected ?Closure $recordMenu = null;
+
+    /** @var class-string<\Filament\Resources\Resource>|null set by resource() */
+    protected ?string $resourceClass = null;
 
     protected ?Closure $recordResolver = null;
 
@@ -124,13 +129,37 @@ class NavItem
     {
         $url = $resource::getIndexUrl($parameters);
 
-        return static::make($resource::getNavigationLabel())
+        $item = static::make($resource::getNavigationLabel())
             ->icon($resource::getNavigationIcon())
             ->url($url)
             ->visible(fn (): bool => $resource::canViewAny())
             ->ignoreRecordKeys(fn (): array => ['create', ...static::staticRouteSegments($url)])
             ->resolveRecordUsing(fn (string $key): ?Model => $resource::resolveRecordRouteBinding($key))
             ->recordTitleUsing(fn (Model $record): string => static::plainText($resource::getRecordTitle($record)));
+        $item->resourceClass = $resource;
+
+        // A resource that declares its own record menu needs no ->record() here.
+        if (is_subclass_of($resource, HasDrilldownRecordMenu::class)) {
+            $item->record(fn (mixed $record): array => $record instanceof Model ? $resource::drilldownRecordMenu($record) : []);
+        }
+
+        return $item;
+    }
+
+    /**
+     * The record menu, built from the resource's own record pages: View, Edit, pages managing related
+     * records, custom pages on `/{record}/…`. Labels, icons, badges and access come from each page
+     * (`getNavigationLabel()`, `getNavigationIcon()`, `canAccess()` …), exactly as Filament builds a
+     * record's sub-navigation. Pass page classes to choose and order them; by default every page whose
+     * route needs only the record, in the order of `getPages()`. Only for items made with resource().
+     *
+     * @param  array<int, class-string<\Filament\Resources\Pages\Page>>|null  $pages
+     */
+    public function recordPages(?array $pages = null): static
+    {
+        $resource = $this->resourceClass ?? throw new LogicException('recordPages() only works on items made with NavItem::resource().');
+
+        return $this->record(fn (mixed $record): array => $record instanceof Model ? RecordPages::items($resource, $record, $pages) : []);
     }
 
     /**

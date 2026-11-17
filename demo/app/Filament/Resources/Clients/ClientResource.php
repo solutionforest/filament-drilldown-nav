@@ -19,8 +19,11 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use SolutionForest\DrilldownNav\Contracts\HasDrilldownRecordMenu;
+use SolutionForest\DrilldownNav\Tree\NavItem;
 
-class ClientResource extends Resource
+class ClientResource extends Resource implements HasDrilldownRecordMenu
 {
     protected static ?string $model = Client::class;
 
@@ -69,6 +72,20 @@ class ClientResource extends Resource
             ])
             ->defaultSort('name')
             ->recordActions([ViewAction::make()]);
+    }
+
+    /**
+     * The menu inside one client, declared next to the resource. NavItem::resource(ClientResource::class)
+     * picks it up with no extra config (the `auto` panel); the `admin` panel overrides it with ->record().
+     */
+    public static function drilldownRecordMenu(Model $record): array
+    {
+        return [
+            NavItem::make('Overview')->icon('heroicon-o-eye')->url(static::getUrl('view', ['record' => $record])),
+            NavItem::make('Projects')->icon('heroicon-o-rectangle-stack')->url(static::getUrl('projects', ['record' => $record])),
+            NavItem::make('Invoices')->icon('heroicon-o-receipt-percent')->url(static::getUrl('invoices', ['record' => $record])),
+            NavItem::make('Contacts')->icon('heroicon-o-users')->url(static::getUrl('section', ['record' => $record, 'section' => 'contacts'])),
+        ];
     }
 
     public static function getPages(): array

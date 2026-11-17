@@ -8,7 +8,8 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 
 | Area | API |
 |---|---|
-| Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()` |
+| Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()`, `->accordion()`, `->pollBadges()` |
+| Record menus | `NavItem::recordPages()`, the `Contracts\HasDrilldownRecordMenu` interface |
 | Render hooks | the six `DrilldownNavHook::*` names and the data they pass (`plugin`, `panel`, `depth`, `title`) |
 | Sidebar component | `Livewire\DrilldownSidebar`, the `Livewire\Concerns\HidesNativeNavigation` trait (for panels with their own sidebar component) |
 | Display mode | `ChildDisplay::Drilldown`, `ChildDisplay::Inline` |
@@ -32,7 +33,7 @@ Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys
 | **Classes marked `@internal`**: `RequestState`, `ActivePathResolver`, `NativeNavigation` | implementation details |
 | **Read accessors on `NavItem`** (`getLabel()`, `getChildren()`, `getDisplayChildren()`, `getRecordNode()` …) | they exist for the sidebar view; use the fluent setters instead |
 | **Markup and CSS**: the Blade views and the `fi-drilldown-*` class names | styling hooks, not a contract. If you publish and override views, expect to re-check them on upgrades |
-| **Browser storage keys** (`fi-drilldown:*`) | pinned/recent lists may be reset by an upgrade |
+| **Browser storage keys** (`fi-drilldown:*`) and the `fi-drilldown-open` cookie format | pinned/recent lists may be reset by an upgrade |
 
 ## Versioning policy
 

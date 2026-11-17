@@ -126,7 +126,7 @@ flowchart TD
 ```
 
 - **Which level is shown** is decided by `opensLevel()`: an item with children that is *not* inline. Inline items never create a level, so a page inside an inline section keeps the sidebar on the level that contains the section, with the section open and the current page marked.
-- **Open or closed:** open when the current page is inside it, otherwise the stored choice (`localStorage`, per item), otherwise `defaultExpanded()`.
+- **Open or closed:** open when the current page is inside it, otherwise the stored choice (the `fi-drilldown-open` cookie, read on the server so the first paint is right), otherwise `defaultExpanded()`. With `accordion()`, only sections on the current path start open, and opening one closes its siblings.
 - **Collapsed sidebar** (`sidebarCollapsibleOnDesktop()`): text, titles, headings and badges are bound to Filament's `$store.sidebar.isOpen`, so only icons remain; items reuse Filament's own tooltips; clicking an expandable row opens the sidebar instead of toggling hidden children.
 - **Headings and dividers** are items without URL or children, so they never take part in URL matching.
 

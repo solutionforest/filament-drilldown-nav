@@ -30,11 +30,16 @@ class PortalPanelProvider extends PanelProvider
             ->path('portal')
             ->login()
             ->pages([Dashboard::class, DemoPage::class])
-            ->plugin(DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)->items(fn () => [
+            ->plugin(DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)->accordion()->items(fn () => [
                 NavItem::page(Dashboard::class),
                 NavItem::make('Support')->url('/portal/demo/support')->children([
                     NavItem::make('Tickets')->url('/portal/demo/support/tickets'),
                     NavItem::make('Contact')->url('/portal/demo/support/contact'),
+                ]),
+                // A second section: with ->accordion(), opening one closes the other.
+                NavItem::make('Account')->url('/portal/demo/account')->children([
+                    NavItem::make('Profile')->url('/portal/demo/account/profile'),
+                    NavItem::make('Billing')->url('/portal/demo/account/billing'),
                 ]),
             ]))
             ->middleware([
