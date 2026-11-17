@@ -75,6 +75,7 @@ class NavItem
 
     final public function __construct(protected string|Htmlable $label) {}
 
+    /** A plain menu item with this label. */
     public static function make(string|Htmlable $label): static
     {
         return new static($label);
@@ -190,6 +191,7 @@ class NavItem
         return array_values(array_unique($segments));
     }
 
+    /** Where the item links to, and the URL prefix that makes it the current item. */
     public function url(?string $url): static
     {
         $this->url = $url;
@@ -303,6 +305,7 @@ class NavItem
         return $this;
     }
 
+    /** The icon shown next to the label (a Heroicon name, enum case or Htmlable). */
     public function icon(string|BackedEnum|Htmlable|null $icon): static
     {
         $this->icon = $icon;
@@ -310,7 +313,11 @@ class NavItem
         return $this;
     }
 
-    /** @param array<int, NavItem>|Closure $children */
+    /**
+     * The items below this one: a list, or a closure evaluated at most once per request, only when needed.
+     *
+     * @param  array<int, NavItem>|Closure  $children
+     */
     public function children(array|Closure $children): static
     {
         $this->children = $children;
@@ -318,6 +325,7 @@ class NavItem
         return $this;
     }
 
+    /** Show the item only when this is true (a bool, or a closure evaluated on each render). */
     public function visible(bool|Closure $condition = true): static
     {
         $this->visible = $condition;
@@ -350,7 +358,11 @@ class NavItem
         return $this;
     }
 
-    /** @param Closure(never): mixed $resolver turns the URL key into a record (null = not found) */
+    /**
+     * How the record key in the URL becomes a record for `record()` menus (return null when there is none).
+     *
+     * @param  Closure(never): mixed  $resolver
+     */
     public function resolveRecordUsing(Closure $resolver): static
     {
         $this->recordResolver = $resolver;
@@ -358,7 +370,11 @@ class NavItem
         return $this;
     }
 
-    /** @param Closure(never): string $title label of the record, shown above its menu */
+    /**
+     * The title shown above a record's menu (default: the record cast to text).
+     *
+     * @param  Closure(never): string  $title
+     */
     public function recordTitleUsing(Closure $title): static
     {
         $this->recordTitle = $title;
@@ -445,6 +461,8 @@ class NavItem
     }
 
     /**
+     * A badge next to the label (a string, or a closure evaluated on each render), with an optional color.
+     *
      * @param  string|(Closure(): ?string)|null  $badge
      * @param  string|array<mixed>|(Closure(): (string|array<mixed>|null))|null  $color
      */

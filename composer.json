@@ -1,8 +1,33 @@
 {
     "name": "solutionforest/filament-drilldown-nav",
-    "description": "Drill-down (slide) multi-level sidebar navigation for Filament v5 panels.",
+    "description": "Drill-down sidebar navigation for Filament v5 panels: one level at a time, a menu per record, any depth.",
+    "keywords": [
+        "filament",
+        "filament-plugin",
+        "filamentphp",
+        "filament-v5",
+        "laravel",
+        "livewire",
+        "navigation",
+        "sidebar",
+        "drilldown",
+        "octane"
+    ],
+    "homepage": "https://github.com/solutionforest/filament-drilldown-nav",
     "type": "library",
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/solutionforest/filament-drilldown-nav/issues",
+        "source": "https://github.com/solutionforest/filament-drilldown-nav",
+        "docs": "https://github.com/solutionforest/filament-drilldown-nav/tree/main/docs",
+        "security": "https://github.com/solutionforest/filament-drilldown-nav/security/policy"
+    },
+    "authors": [
+        {
+            "name": "Solution Forest",
+            "homepage": "https://github.com/solutionforest"
+        }
+    ],
     "require": {
         "php": "^8.3",
         "filament/filament": "^5.7",
@@ -36,8 +61,6 @@
             ]
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "scripts": {
         "test": "pest",
         "lint": "pint --test",

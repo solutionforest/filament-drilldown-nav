@@ -1,426 +1,172 @@
-# Filament Drilldown Nav
+<p align="center">
+  <img src="docs/images/banner.png" alt="Filament Drilldown Nav: one sidebar, one level at a time, a menu for every record" width="100%">
+</p>
 
-Drill-down sidebar navigation for **Filament v5**: one left sidebar, **one level at a time**, a **Back** link, any depth — and a **menu per record** (click an project, get that project's own menu).
+<h1 align="center">Filament Drilldown Nav</h1>
 
-![Journey: main menu, projects table, one project, files sub menu](docs/screenshots/00-journey.png)
+<p align="center">
+  Drill-down sidebar navigation for <strong>Filament v5</strong> panels: one level at a time, a <strong>menu for every record</strong>, any depth.
+</p>
 
-## Why
+<p align="center">
+  <a href="https://github.com/solutionforest/filament-drilldown-nav/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/solutionforest/filament-drilldown-nav?logo=github&label=release&color=f59e0b"></a>
+  <a href="https://github.com/solutionforest/filament-drilldown-nav/actions/workflows/tests.yml"><img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/solutionforest/filament-drilldown-nav/tests.yml?branch=main&label=tests&logo=githubactions&logoColor=white"></a>
+  <img alt="PHPStan level 10" src="https://img.shields.io/badge/PHPStan-level%2010-brightgreen?logo=php&logoColor=white">
+  <img alt="Filament v5 only" src="https://img.shields.io/badge/Filament-v5%20only-FDAE4B">
+  <img alt="PHP 8.3+" src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white">
+  <img alt="Laravel 13" src="https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white">
+  <img alt="Livewire 4" src="https://img.shields.io/badge/Livewire-4-FB70A9?logo=livewire&logoColor=white">
+  <img alt="Octane: RoadRunner, Swoole, FrankenPHP" src="https://img.shields.io/badge/Octane-RoadRunner%20%7C%20Swoole%20%7C%20FrankenPHP-FF2D20?logo=laravel&logoColor=white">
+  <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="Status: before 1.0" src="https://img.shields.io/badge/status-before%201.0-orange">
+</p>
 
-Filament's sidebar nests everything in place, and a cluster's or page's sub-navigation appears as a *second* menu beside the content. That is fine for two levels. It gets awkward when a record has its own area with its own sub menus (3–4 levels) and you want it all in **one** place.
+<p align="center">
+  <a href="docs/README.md">📚 Documentation</a> ·
+  <a href="docs/usage.md">🚀 Usage guide</a> ·
+  <a href="docs/api-reference.md">🧩 API reference</a> ·
+  <a href="docs/support.md">✅ Support matrix</a> ·
+  <a href="docs/demo.md">🎬 Demo</a> ·
+  <a href="CHANGELOG.md">📝 Changelog</a>
+</p>
+
+---
+
+## ✨ Features
+
+| | Feature | |
+|---|---|---|
+| 🧭 | **Drill-down levels** | Click an item and the sidebar shows *its* menu, with a **Back** link and the section title. Any depth. |
+| 🗂️ | **A menu per record** | Click a project, client or order and get **that record's** menu: `->record()`, or built automatically from the resource's pages with `->recordPages()`. Nested resources work. |
+| ➕ | **Expand in place** | `->inline()` sections with guide lines, nesting, an accordion mode, and an open/closed state that is rendered on the server (no flash). |
+| 🔌 | **Reuses Filament's navigation** | `NavItem::fromFilamentNavigation()` imports your existing groups, parent items, badges, sorting and access checks. Clusters keep working. |
+| 🔎 | **Search** | Filters the menu as you type, can search **all levels** (even unopened ones), and focuses with the `/` key. |
+| 📌 | **Recent and pinned pages** | In the browser, or stored **in the database** per user, panel and tenant. |
+| 🔢 | **Live badges** | `pollBadges('30s')` and the `refresh-sidebar` event keep counts such as "Unpaid 3" fresh. |
+| 🪝 | **Render hooks** | Six [Filament render hooks](docs/render-hooks.md) around the menu: add content without publishing views. |
+| 📱 | **Responsive** | Collapsed icon rail, mobile drawer, dark mode. |
+| 🌍 | **11 languages, right to left** | English, 简体中文, 繁體中文 (TW, HK), 日本語, 한국어, Español, العربية, עברית, فارسی, اردو. |
+| ⚡ | **Octane-safe** | Per-request state. Verified on real RoadRunner, Swoole and FrankenPHP workers, including under parallel load. |
+| 🏢 | **Multi-panel, tenancy, domains** | Each panel has its own tree; URLs come from Filament, so tenants and domains just work. |
+| ♿ | **Accessible** | `aria-current`, `aria-expanded`, focus moves to the new level, reduced-motion support. |
+| 🛡️ | **No view overrides** | Nothing to re-publish after a Filament upgrade; works with a strict Content-Security-Policy. |
+
+## 🧭 Why
+
+Filament nests everything in the sidebar and shows a cluster's or page's sub-navigation as a *second* menu beside the content. That is fine for two levels. It gets awkward when a record has its own area with its own sub-menus (3 or 4 levels) and you want it all in **one** place.
 
 | You want | Filament alone | This plugin |
 |---|---|---|
-| A menu for one record (project, site, customer …) | build a sub-navigation per page | `->record(fn ($record) => [...])` |
+| A menu for one record | build a sub-navigation per page | `->record(fn ($record) => [...])` |
 | 3–4 levels in the left sidebar | groups + one parent level | any depth |
 | One menu location | sidebar **and** sub-navigation | the sidebar |
-| Keep `$navigationGroup`, `$navigationParentItem`, badges, `canAccess()` | — | `NavItem::fromFilamentNavigation()` |
+| Keep `$navigationGroup`, badges, `canAccess()` | n/a | `NavItem::fromFilamentNavigation()` |
 
-> If two levels are enough for you, Filament's native groups, parent items and Clusters are simpler. Use this plugin when you need more depth or a menu per record.
+> If two levels are enough, Filament's own groups, parent items and clusters are simpler: [this plugin or Filament's navigation?](docs/vs-filament-native.md)
 
-## How it works (short)
+## 📸 Screenshots
 
-The level you see is computed **on the server from the URL, on every request**: no JavaScript state, so refreshes and shared links land in the right place.
+![Journey: main menu, projects table, one project, files sub menu](docs/screenshots/00-journey.png)
 
-```mermaid
-flowchart LR
-    A["Request URL"] --> B["Match item URLs<br/>(longest prefix wins)"]
-    B --> C{"Record key in URL?"}
-    C -- "yes" --> D["Resolve the record,<br/>add its menu as one more level"]
-    C -- "no" --> E
-    D --> E["Deepest item that has children"]
-    E --> F["Sidebar: Back + title + its children"]
-```
+| 📂 A client's menu, real badges | 🧱 Five levels deep | 🔎 Search all levels | 📌 Pinned pages |
+|---|---|---|---|
+| ![client menu](docs/screenshots/21-client-menu.png) | ![task menu](docs/screenshots/24-task-menu.png) | ![search](docs/screenshots/52-search-all-levels.png) | ![pinned](docs/screenshots/53-pinned-database.png) |
 
-Full explanation with more diagrams (level selection, per-record sequence, native navigation reuse, class overview): **[docs/how-it-works.md](docs/how-it-works.md)**.
+| 🌙 Dark | 📱 Mobile drawer | 🇸🇦 Right to left | ▫️ Collapsed |
+|---|---|---|---|
+| ![dark](docs/screenshots/09-dark-mode.png) | ![mobile](docs/screenshots/10-mobile-drawer.png) | ![rtl](docs/screenshots/31-rtl-record.png) | ![collapsed](docs/screenshots/17-collapsed-root.png) |
 
-## Requirements
+## ✅ Requirements
 
-PHP 8.3+, Laravel 13, Filament **5.7** or later (the oldest version tested in CI). Run a patched Filament: versions below 5.8.3 have published security advisories, which Composer blocks by default.
+> **Filament v5 only.** Filament v3 and v4 are not supported.
 
-## Install
+| | Supported |
+|---|---|
+| **Filament** | `^5.7`: the oldest version (5.7.0) and the latest 5.x both run in CI |
+| **PHP** | `^8.3` |
+| **Laravel / Livewire** | 13 / 4 (the versions CI runs) |
+| **Octane** | RoadRunner, Swoole, FrankenPHP |
 
-Not on Packagist yet:
+The full, maintained table (and what each row means) is in **[docs/support.md](docs/support.md)**. Run a patched Filament: versions below 5.8.3 have published security advisories, which Composer blocks by default.
+
+## 📦 Installation
+
+The package is not on Packagist yet; install it from GitHub:
 
 ```bash
 composer config repositories.drilldown vcs https://github.com/solutionforest/filament-drilldown-nav
-composer require solutionforest/filament-drilldown-nav:dev-main
-php artisan filament:assets   # publishes the plugin's stylesheet (also run by `php artisan filament:upgrade`)
+composer require solutionforest/filament-drilldown-nav:^0.6
+php artisan filament:assets      # publishes the stylesheet (`php artisan filament:upgrade` does it too)
 ```
 
-## Quick start
+## 🚀 Quick start
 
 ```php
 use SolutionForest\DrilldownNav\DrilldownNavPlugin;
 use SolutionForest\DrilldownNav\Tree\NavItem;
 
 $panel->plugin(DrilldownNavPlugin::make()->items(fn () => [
-    NavItem::page(Dashboard::class),                       // label, icon, URL, access from the class
+    NavItem::page(Dashboard::class),                 // label, icon, URL and access from the class
 
-    NavItem::resource(ProjectResource::class)                // list = a normal Filament table
-        ->record(fn (Project $project) => [                    // menu shown INSIDE one project
-            NavItem::make('Overview')->icon('heroicon-o-eye')
-                ->url(ProjectResource::getUrl('view', ['record' => $project])),
-            NavItem::make('Tasks')->icon('heroicon-o-clipboard-document-check')
-                ->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'tasks'])),
-            NavItem::make('Files')->icon('heroicon-o-book-open')->children([   // a sub menu
-                NavItem::resource(DocumentResource::class, ['project' => $project]),   // nested resource
-                NavItem::make('Links')->url(ProjectResource::getUrl('section', ['record' => $project, 'section' => 'links'])),
-            ]),
-        ]),
+    NavItem::resource(ProjectResource::class)        // the list is a normal Filament table
+        ->recordPages(),                             // the menu INSIDE one project, built from its pages
 
-    ...NavItem::fromFilamentNavigation(),                  // everything else Filament would show
+    ...NavItem::fromFilamentNavigation(),            // everything else Filament would show
 ]));
 ```
 
-In the sidebar, the plugin's menu replaces Filament's own list: **only items returned from `items()` are shown there.** Everywhere else Filament's navigation is untouched: `->topNavigation()` still shows the native menu in the top bar (the drill-down menu is then in the mobile drawer), and breadcrumbs or other plugins that call `Filament::getNavigation()` still get the full list.
+Prefer to write a record's menu yourself, nest levels, add search, pins, badges or hooks? Everything is in the **[usage guide](docs/usage.md)**.
 
-> **Custom sidebar component?** The plugin swaps in its own sidebar Livewire component (`DrilldownSidebar`, a subclass of Filament's). If your panel already sets `->sidebarLivewireComponent(...)`, the plugin leaves yours alone; add the `SolutionForest\DrilldownNav\Livewire\Concerns\HidesNativeNavigation` trait to it, or Filament's list will show under the drill-down menu.
+> In the sidebar, the plugin's menu replaces Filament's own list: **only items returned from `items()` are shown there.** Everywhere else Filament's navigation is untouched (`->topNavigation()` still shows the native menu in the top bar).
 
-## Tutorial
+## 📚 Documentation
 
-### 1. Pages, resources and plain URLs
+| | Page | What is in it |
+|---|---|---|
+| 🚀 | [Usage guide](docs/usage.md) | Pages, resources, nested levels, record menus, native navigation, visibility, badges |
+| ➕ | [Modern navigation](docs/modern-navigation.md) | Expand in place, accordion, headings, the collapsed sidebar, accessibility |
+| 🔎 | [Large menus](docs/large-menus.md) | Search, shortcuts, recent and pinned pages, long lists, live badges |
+| 🪝 | [Render hooks](docs/render-hooks.md) | Add your own content around the menu |
+| 🏢 | [Panels, workers, tenants, languages](docs/multi-panel-octane-i18n.md) | Multi-panel, Octane, tenancy, translations, right-to-left |
+| 🧩 | [API reference](docs/api-reference.md) | Every public method (generated from the code) |
+| 🔒 | [API stability](docs/api-stability.md) | What is public, what may change, and what 1.0 needs |
+| ✅ | [Support matrix](docs/support.md) | Filament, PHP, Laravel, Livewire, Octane |
+| 🔌 | [Works with other plugins](docs/compatibility.md) | Checked next to five popular plugins |
+| 🧠 | [How it works](docs/how-it-works.md) | The problem, the request flow, diagrams |
+| ⚖️ | [This plugin or Filament's navigation?](docs/vs-filament-native.md) | A decision guide |
+| 🎬 | [The demo app](docs/demo.md) | A realistic client portal with roles and 3,000 rows |
+| 🧪 | [Testing and quality](docs/testing-and-quality.md) | What is tested and how to run it |
+| ❓ | [FAQ and troubleshooting](docs/faq.md) | Empty menu, missing styles, record menus that do not appear |
+| ⬆️ | [Upgrading](docs/upgrading.md) | Notes for each release |
+| 🤖 | [AGENTS.md](AGENTS.md) · [SKILLS.md](SKILLS.md) | For people and AI agents changing this repository / adding the plugin to an app |
 
-```php
-NavItem::page(Dashboard::class);                 // Filament Page
-NavItem::resource(SiteResource::class);          // Filament Resource (list URL)
-NavItem::make('Reports')->icon('heroicon-o-chart-bar')->url('/admin/reports')->badge('3', 'danger'); // any URL, e.g. a React page
-```
-
-### 2. Nested levels
-
-```php
-NavItem::make('Docs')->url('/admin/docs')->children([
-    NavItem::make('Guides')->url('/admin/docs/guides')->children([
-        NavItem::make('Install')->url('/admin/docs/guides/install'),
-    ]),
-]);
-```
-
-An item with children opens its own level when you visit its URL. An item **without a URL** is a pure group: clicking it goes to its first child.
-
-| Level 4 | Reports (native group, badge) |
-|---|---|
-| ![level 4](docs/screenshots/08-docs-level-4.png) | ![reports](docs/screenshots/06-reports-native.png) |
-
-### 3. A menu per record
-
-`record()` is the feature this plugin exists for. When the URL is `<list URL>/<key>/…` (and the key is not `create`), the key is resolved with the resource's own route binding and the sidebar shows your menu, titled with the record's title. Back returns to the list.
-
-```php
-NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [ /* any NavItems, any depth */ ]);
-```
-
-| One project's menu | Sub menu inside it |
-|---|---|
-| ![project menu](docs/screenshots/03-project-menu.png) | ![files sub menu](docs/screenshots/04-files-sub-menu.png) |
-
-Record-menu URLs must live under the resource's own URL (`/admin/projects/{record}/…`), because that is how the plugin knows you are inside the record. Register extra pages on the resource, **after** `edit`:
-
-```php
-'edit' => EditProject::route('/{record}/edit'),
-'section' => ProjectSection::route('/{record}/{section}'),
-```
-
-#### Less code: a menu from the resource's own pages
-
-Two shortcuts, so a record menu does not have to be written by hand:
-
-```php
-// 1. Build it from the resource's record pages: View, Edit, Manage… related records, custom /{record}/… pages.
-//    Labels, icons, badges and access come from each page (getNavigationLabel(), canAccess() …),
-//    exactly as Filament builds a record's sub-navigation. Pass page classes to choose and order them.
-NavItem::resource(ProjectResource::class)->recordPages();
-NavItem::resource(ProjectResource::class)->recordPages([ViewProject::class, ManageProjectTasks::class]);
-
-// 2. Or let the resource declare its menu itself, next to its pages; NavItem::resource() then needs nothing else.
-class ClientResource extends Resource implements \SolutionForest\DrilldownNav\Contracts\HasDrilldownRecordMenu
-{
-    public static function drilldownRecordMenu(Model $record): array
-    {
-        return [NavItem::make('Overview')->url(static::getUrl('view', ['record' => $record])), /* … */];
-    }
-}
-```
-
-`recordPages()` leaves out pages whose route needs more than the record (like `/{record}/{section}`). An explicit `->record()` or `->recordPages()` on the item wins over the resource's own menu. (Demo: the `auto` panel at `/auto`.)
-
-![record menu from the resource's pages](docs/screenshots/50-record-pages.png)
-
-For a non-resource item use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`. Fixed pages below the list URL (like `/projects/import`) are never mistaken for a record: they are excluded automatically for `resource()`, or with `->ignoreRecordKeys(['create', 'import'])`.
-
-#### Your own header for a level
-
-A level normally starts with **Back** and its title. Replace that with your own view, for example a card with the record's status and a switcher, with `->recordHeader()` (for a record's menu) or `->header()` (for any item that opens a level):
-
-```php
-NavItem::resource(TaskResource::class, ['project' => $project])
-    ->recordHeader(fn (Task $task) => view('filament.nav.task-header', [
-        'task' => $task,
-        'backUrl' => TaskResource::getIndexUrl(['project' => $project]),
-    ]))
-    ->record(fn (Task $task) => [ /* ... */ ]);
-```
-
-A view (any `Htmlable`) is rendered as HTML, a string as escaped text, and `null` keeps the default. The header replaces Back too, so include a link back yourself. It receives keyboard focus when you drill in or out, like the default title. In the collapsed sidebar it is shown as you wrote it, so hide what does not fit with `x-show="$store.sidebar.isOpen"`. (Demo: one task's menu.)
-
-#### Pages that live elsewhere
-
-An item is current when the URL starts with its own URL. When some of its pages live under another URL, list those with `->activeOn()`; they match the same way:
-
-```php
-NavItem::make('Knowledge')
-    ->url(AgentResource::getUrl('knowledge', ['record' => $agent]))       // /agents/5/sources
-    ->activeOn([KnowledgeDocumentResource::getIndexUrl(['agent' => $agent])]); // /agents/5/knowledge/{id}, …/create
-```
-
-When the URL cannot place a page at all (a shared route, a tab in the query string, a React route), use `->activeWhen()` with any condition:
-
-```php
-NavItem::make('Exports')->url('/admin/reports/exports')
-    ->activeWhen(fn (): bool => request()->routeIs('downloads.*'));
-```
-
-It counts as an exact URL match (if another item matches the URL exactly, the deeper one wins) and runs at most once per request. It is found inside branches given as arrays; children built by a closure are only opened on the current path, so put `activeWhen()` items there only if their parent also matches.
-
-### 4. Reuse Filament's own navigation
-
-Anything you already declare the Filament way keeps working (`$navigationGroup`, `$navigationParentItem`, `$navigationSort`, `$navigationBadge`, `shouldRegisterNavigation()`, `canAccess()`, `NavigationItem::make()`):
-
-```php
-...NavItem::fromFilamentNavigation(
-    fn (NavigationItem $item): bool => $item->getUrl() !== Dashboard::getUrl() // leave out what you list by hand
-)
-```
-
-Groups become URL-less groups (with the group icon you registered on the panel), parent items become sub levels, badges and access checks carry over. See the *Reports* group in the demo.
-
-### 5. Visibility and badges
-
-```php
-NavItem::make('Billing')->visible(fn () => auth()->user()->isAdmin());
-NavItem::make('Inbox')->badge(fn () => (string) Message::unread()->count(), 'danger');
-```
-
-Empty groups disappear. Closures run once per request, and only for items on the current path.
-
-**Live updates.** The sidebar is a Livewire component, so it can refresh without a page load, on the same level:
-
-```php
-DrilldownNavPlugin::make()->pollBadges('30s');   // re-render every 30 s (paused by Livewire in background tabs)
-$this->dispatch('refresh-sidebar');                // or refresh right after a change, from any Livewire component
-```
-
-## Modern navigation: click to expand, lines, icons, sections
-
-Besides drilling into a new level, an item's children can **expand in place**, like a classic tree:
-
-```php
-NavItem::heading('Workspace')->divider(),                       // section heading + a line above it
-
-NavItem::make('Team')->icon('heroicon-o-users')
-    ->inline()                                                  // children expand under the item
-    ->defaultExpanded()                                         // start open (otherwise: closed, remembered)
-// DrilldownNavPlugin::make()->accordion()                      // only one section open at a time
-    ->children([
-        NavItem::make('Members')->url('/admin/team/members')->badge('8'),
-        NavItem::make('Invitations')->url('/admin/team/invitations')->badge('2', 'warning'),
-    ]),
-
-NavItem::make('Subscription')->icon('heroicon-o-credit-card')->inline()->children([   // nesting works
-    NavItem::make('Overview')->url('/admin/subscription'),
-    NavItem::make('Invoices')->inline()->children([ /* ... */ ]),
-]),
-```
+## 🧪 Quality
 
 | | |
 |---|---|
-| `->inline()` / `->drilldown()` | per item: expand in place, or open a new level (the default) |
-| `DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)` | change the default for the whole panel (items can still override) |
-| `->defaultExpanded()` | inline items start open; otherwise the open/closed state is remembered per browser |
-| `DrilldownNavPlugin::accordion()` | only one inline section open at a time within the same parent; opening one closes its siblings |
-| `NavItem::heading('…')`, `->divider()` | non-clickable section headings and separator lines |
-| `->icon()`, `->activeIcon()`, `->badge()` | icons (outline/solid when current) and badges; icon-less nested items get Filament's guide line and dot |
-
-What you get without extra code: the section containing the current page is **open** and its parents marked; guide lines for nested items (Filament's own style); chevrons that rotate; state remembered across page loads **and rendered by the server** (a `fi-drilldown-open` cookie, so a closed section never flashes open on load); **collapsed (icon-only) sidebar** when the panel uses `->sidebarCollapsibleOnDesktop()` (labels, titles and badges hide, Back keeps its arrow with a tooltip, tooltips on items); keyboard-operable toggle buttons with `aria-expanded`; `aria-current="page"` on the current item; a labelled `nav` landmark; focus moves to the new level's title when you drill in or out; `prefers-reduced-motion` respected; and mirrored chevrons, Back arrow and animation for right-to-left pages (checked with Arabic).
-
-| Expand in place (`->inline()`) | Nested, with guide lines |
-|---|---|
-| ![inline expanded](docs/screenshots/14-inline-expanded.png) | ![nested](docs/screenshots/15-inline-nested.png) |
-
-| Collapsed: top level | Collapsed: inside a project |
-|---|---|
-| ![collapsed root](docs/screenshots/17-collapsed-root.png) | ![collapsed record](docs/screenshots/16-collapsed-record.png) |
-
-In the collapsed sidebar, a top-level item without an icon shows its **initial** in a small square, so it stays visible and clickable (with the label as tooltip). Icons still read better: give top-level items an icon where you can.
-
-## Large menus: search, recent, pinned, long lists
-
-```php
-DrilldownNavPlugin::make()
-    ->searchable(minItems: 6, allLevels: true)   // a filter box once a level lists 6+ items, also finding pages on other levels; '/' focuses it
-    ->recent(5)                 // the last 5 pages visited, at the top level
-    ->pinnable()                // "Pin this page" + a Pinned list
-    ->items(fn () => [
-        NavItem::make('Projects')->url('/admin/clients/1/projects')
-            ->children(fn () => $client->projects()->limit(40)->get()->map(fn ($p) => NavItem::make($p->name)->url(…))->all())
-            ->limit(5, '/admin/clients/1/projects'),   // show 5, then "View all (N)"
-    ]);
-```
-
-- **Search** filters what is already on screen (the current level and inline sections) as you type: a section stays visible when a child matches, headings hide, `Esc` clears, and a note appears when nothing matches. With `allLevels: true` it also lists matching pages from levels you have not opened, under **In other menus**, with their trail ("Docs › Guides › Getting started › Install"). That index is the whole menu as the user may see it (`flatten()`, below), loaded once over Livewire the first time someone types two letters; it runs `children()` closures, stops after 300 pages, and leaves out per-record menus (records are not enumerated). Press **`/`** anywhere on the page (outside a text field) to focus the box; change or turn off the key with `searchable(shortcut: 'k')` / `shortcut: null`.
-
-  ![search all levels](docs/screenshots/52-search-all-levels.png)
-
-- **The menu as a list:** `DrilldownNavPlugin::current()?->flatten()` returns every page the current user may see as `['label', 'url', 'trail', 'depth']`, for a command palette, tests, or a mobile bottom bar:
-
-  ```php
-  // e.g. Mobile Bottom Nav, with our top-level pages
-  MobileBottomNav::make()->items(fn () => collect(DrilldownNavPlugin::current()?->flatten() ?? [])
-      ->where('depth', 0)->take(4)
-      ->map(fn (array $page) => MobileBottomNavItem::make($page['label'])->url($page['url']))->all());
-  ```
-- **Pinned pages in the database:** `->pinnable(database: true)` stores pins in a `drilldown_nav_pins` table per user, panel and tenant, so they follow the user to every device and are rendered by the server (no empty list until JavaScript runs). Publish and run the migration once: `php artisan vendor:publish --tag=filament-drilldown-nav-migrations && php artisan migrate`. Use your own model on the same table with `pinnable(database: true, model: MyPin::class)` (it must extend `SolutionForest\DrilldownNav\Models\DrilldownPin`). Only paths under the panel (and tenant) can be pinned; at most 20 per user; the label of a pinned page is updated when the user visits it. The **Pinned** list sits at the top of the top level. (Demo: the `auto` panel.)
-
-  ![pinned pages from the database](docs/screenshots/53-pinned-database.png)
-- **Recent / Pinned** *(experimental, may change before 1.0)* are otherwise stored in the browser per panel, tenant and user, show at the top level, and remember the page's trail (e.g. "Website redesign › Tasks"). The pin toggle appears on every level. Only entries under the current panel (and tenant) URL are shown. They are links, not permissions: a pinned page the user can no longer open still shows until it is unpinned, and opening it gets Filament's usual 403/404.
-- **`->limit($max, $moreUrl)`** shortens the **display** of a long child list; it does not make big menus cheaper. All children still take part in URL matching and the child containing the current page is never hidden, so the sidebar stays correct. Keep your own query small (`limit()` on the query): it shortens the display, it does not avoid loading the rows.
-
-| Search | Pinned + Recent |
-|---|---|
-| ![search](docs/screenshots/40-search.png) | ![pinned and recent](docs/screenshots/42-pinned-recent.png) |
-
-## Render hooks: add your own content around the menu
-
-The sidebar exposes [Filament render hooks](https://filamentphp.com/docs/5.x/advanced/render-hooks), so you can add a help link, a workspace switcher or a banner without publishing or overriding the plugin's views:
-
-```php
-use SolutionForest\DrilldownNav\DrilldownNavHook;
-
-$panel
-    ->renderHook(DrilldownNavHook::NAV_END, fn () => view('nav-help-link'))
-    ->renderHook(DrilldownNavHook::HEADER_AFTER, fn (array $data) => view('level-note', ['title' => $data['title']]));
-// or anywhere: FilamentView::registerRenderHook(DrilldownNavHook::NAV_END, fn () => …, scopes: 'admin');
-```
-
-| Hook | Where |
-|---|---|
-| `NAV_START` / `NAV_END` | first / last thing inside the navigation |
-| `HEADER_BEFORE` / `HEADER_AFTER` | around the Back link and title (only on levels that have one) |
-| `LIST_BEFORE` / `LIST_AFTER` | around the list of items |
-
-Every hook is scoped to the id of the panel being rendered, so a hook registered for `admin` never shows in another panel. A closure may declare `array $data`, which holds `plugin`, `panel`, `depth` (0 = top level) and `title`.
-
-Hook output is wrapped in `<div class="fi-drilldown-hook" data-hook="…">`. In a panel with `->sidebarCollapsibleOnDesktop()` it shows only while the sidebar is open, so free text never widens the icon rail.
-
-## Works with other plugins
-
-Checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav: all work. Hover Sidebar and Sidebar Resize conflict with **each other** (both set the width). Details, versions and screenshots: [docs/compatibility.md](docs/compatibility.md).
-
-## Multi-panel, Octane, tenants, languages
-
-- **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
-- **Octane / long-lived workers:** safe. Request-specific state (item tree, children, record lookups) lives in a request-scoped binding that is discarded after each request. Pass a **closure** to `items()` so menus can depend on the user, tenant or database; static `NavItem`s built once are fine for static menus. Verified with simulated worker reuse in the tests and with **real Octane workers on RoadRunner, Swoole and FrankenPHP** (run in CI, see Quality).
-- **Tenancy and domains:** Home and Back use `Panel::getUrl($tenant)`, so `https://app.test/admin/{tenant}` and panels on their own domain work. (Demo: `workspace` panel with tenancy on `workspace.localhost`.)
-- **Languages:** the plugin's own text ("Back", the landmark, search, pin …) is translated in English, 简体中文, 繁體中文 (`zh_TW`, `zh_HK`), 日本語, 한국어, Español and the right-to-left languages العربية, עברית, فارسی and اردو (Arabic was checked in a browser; Hebrew, Persian and Urdu are machine-written and share the same rules, so a native-speaker review is welcome). Publish to change them: `php artisan vendor:publish --tag=filament-drilldown-nav-translations`. Your item labels are your own to translate. Right-to-left is supported: with an RTL locale the chevrons, Back arrow and slide animation mirror (checked in a browser with Arabic).
-
-| Japanese UI | Second panel with its own tree |
-|---|---|
-| ![ja](docs/screenshots/11-japanese.png) | ![portal](docs/screenshots/12-portal-panel.png) |
-| **Arabic (right-to-left): top level** | **Arabic: inside a project** |
-| ![ar root](docs/screenshots/30-rtl-root.png) | ![ar record](docs/screenshots/31-rtl-record.png) |
-
-## Demo app: a small agency's client portal
-
-`demo/` is a Laravel 13 + Filament v5 app wired to the package via a path repository. It is a realistic back office, not a toy: about **3,000 rows** (12 clients, ~56 projects, ~760 tasks, ~225 documents, ~146 invoices, ~1,330 time entries) and **four roles**.
-
-| Area | What it shows |
-|---|---|
-| **Clients** (staff only) | table → click a client → its own menu: Overview, **Projects** (opens a level listing that client's projects, with a count badge), **Invoices** (a nested resource, badge = unpaid invoices), Contacts |
-| **Projects** | table → click a project → its menu: Overview, **Tasks** (nested resource, badge = open tasks), Time, Files → Documents / Links, Settings |
-| **Tasks** | each task has its own menu (Details, Comments, History) under a custom header (`recordHeader()`: All tasks, title, status): **five levels**: Projects → Project → Tasks → Task → Comments |
-| **Roles** | `admin`, `manager`, `member`, `client`: menus and pages differ (a client login sees only its own client's projects and never Clients, Time or Settings) |
-| **Reports** | a group imported from native Filament navigation: sort order, group icon, badge, native parent item, permission-gated page |
-| **Workspace** | click-to-expand sections with a heading and divider, nested expand, remembered state |
-| Other panels | `portal` (second tree, inline by default), `plain` (no plugin), `workspace` (tenancy + domain) |
+| 🔬 **PHPStan level 10** | the strictest level, no ignores, no baseline |
+| 🧪 **Pest + feature tests** | the package, and a demo app that renders the real panels (100+ tests) |
+| 📉 **Oldest and newest Filament** | the whole suite runs on `5.7.0` and on the latest 5.x |
+| ⚡ **Real Octane servers** | RoadRunner, Swoole and FrankenPHP, one worker and four workers under parallel requests |
+| 📖 **Docs are tested too** | a test keeps `composer.json`, the support matrix, the README, CI and the generated API reference in step, and checks every link |
 
 ```bash
-cd demo
-composer install
-cp .env.example .env && php artisan key:generate
-touch database/database.sqlite && php artisan migrate --seed
-php artisan serve
+composer check                   # Pint + PHPStan 10 + Pest
+(cd demo && php artisan test)    # feature tests against the real panels
 ```
 
-Log in at `/admin/login` (password `password`, local demo data only):
+## 🗺️ Status and limits
 
-| Email | Role | Sees |
-|---|---|---|
-| `demo@example.com` | admin | everything, including *Audit log* and *Billing* |
-| `manager@example.com` | manager | Clients, projects, invoices |
-| `member@example.com` | member | projects and tasks |
-| `client@example.com` | client (Acme Corp) | only Acme's projects; no Clients, Time or Settings |
+The plugin is feature-complete for 1.0, but the API is not frozen yet: see [API stability](docs/api-stability.md). Things to know:
 
-| Client menu (real badges) | A client's projects, as a level |
-|---|---|
-| ![client menu](docs/screenshots/21-client-menu.png) | ![client projects](docs/screenshots/22-client-projects-level.png) |
-| **Project menu (open-task badge)** | **Level 4: one task, its own menu** |
-| ![project menu](docs/screenshots/23-project-menu-tasks.png) | ![task menu](docs/screenshots/24-task-menu.png) |
-| **Same project as a client login** | **Staff top level** |
-| ![client role](docs/screenshots/25-client-role.png) | ![admin root](docs/screenshots/26-admin-root.png) |
-
-<details>
-<summary>More screenshots</summary>
-
-| Projects table | Nested resource inside an project |
-|---|---|
-| ![projects](docs/screenshots/02-projects-list.png) | ![document edit](docs/screenshots/05-document-edit.png) |
-
-| Native parent item (Usage → By project) | Dark mode |
-|---|---|
-| ![by project](docs/screenshots/07-reports-parent-item.png) | ![dark](docs/screenshots/09-dark-mode.png) |
-
-| Mobile drawer |
-|---|
-| ![mobile](docs/screenshots/10-mobile-drawer.png) |
-
-</details>
-
-## Quality
-
-```bash
-composer check                  # Pint + PHPStan (level 10, no baseline) + Pest
-cd demo && php artisan test     # feature tests: real pages rendered through the panel
-```
-
-- **Pest** (package): URL matching, level selection, groups, per-record menus, nested sub menus, once-per-request evaluation, ignored keys, failing lookups.
-- **Demo feature tests**: each level, record menus, nested resources, native navigation import, badges, permissions, no duplicates; plus tests on the seeded agency (row counts, real badge numbers, all table pages with real rows, the five-level path, each role's menu, client data isolation, a query budget per page).
-- **PHPStan level 10** (the strictest level) on `src/`, with no ignores.
-- **Worker reuse:** tests serve several requests with one application (scoped state dropped, facades cleared, as Octane does) across panels, users, tenants and records. In addition, `demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a **real one-worker Octane server** and runs 21 checks (two users and three panels alternating over three rounds, a record renamed between requests); CI runs it for all three servers. The script was checked by mutation: making the plugin's request state outlive the request makes it fail.
-- **Languages:** every shipped language is tested for rendering and for having the same keys; the four right-to-left languages are checked for `dir="rtl"` and the mirroring rules, and Arabic in a browser.
-- **Filament versions:** the whole demo suite and the real-server smoke test pass on Filament 5.7.0 (the oldest supported) and on the latest 5.x; a CI job runs the oldest.
-- **Clusters:** a Filament cluster next to the plugin appears in the menu and keeps its own sub-navigation (tested).
-- **Search, recent, pinned, limit:** markup, per-user storage keys, translations, and the limit logic are tested; the browser behaviour (typing, filtering, Esc, pinning, clearing, reload) was run in a real browser.
-- **Modern navigation:** expand/collapse state, nesting, headings, dividers, chevrons, the collapsed mode and the focus target are tested in the demo and with a real browser (click, keyboard, reload, collapse); the tests were checked by mutation (breaking the feature makes them fail).
-- CI (`.github/workflows/tests.yml`) runs everything on a **self-hosted** runner; fork pull requests are skipped.
-
-## Documentation
-
-- [How it works](docs/how-it-works.md) — problem, request flow, record menus, native navigation, class overview.
-- [This plugin or Filament's own navigation?](docs/vs-filament-native.md) — a decision guide.
-- [Works with other plugins](docs/compatibility.md) — what was checked, versions, and how to repeat it.
-- [API stability](docs/api-stability.md) — what is public, what may change, and what 1.0 needs.
-- [Changelog](CHANGELOG.md).
-- [Contributing](CONTRIBUTING.md) and [Security policy](SECURITY.md).
-- [AGENTS.md](AGENTS.md) — for people and AI agents changing this repo.
-- [SKILLS.md](SKILLS.md) — for AI agents adding the plugin to a Filament app.
-
-## Limits
-
-- In the sidebar, only items you list (or import with `fromFilamentNavigation()`) are shown.
+- In the sidebar only the items you list (or import with `fromFilamentNavigation()`) are shown.
 - Levels come from the URL (plus `activeOn()` / `activeWhen()`), so a record's pages should live under the record's URL.
-- Search only covers what is on screen; recent and pinned pages are per browser.
-- Pinned pages are per browser; a pinned page that stops opening is dropped by a daily check, not instantly.
+- Pinned pages stored in the browser are per browser; use `pinnable(database: true)` to sync them across devices.
+- Hebrew, Persian and Urdu strings are machine-written and welcome a native-speaker review.
 
-## License
+## 🤝 Contributing, security, license
 
-MIT
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
+- **Security:** please report vulnerabilities privately: [SECURITY.md](SECURITY.md).
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md).
+- **License:** [MIT](LICENSE). Made by [Solution Forest](https://github.com/solutionforest).

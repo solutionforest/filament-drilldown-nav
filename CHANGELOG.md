@@ -4,6 +4,15 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-17
+
+### Documentation and repository
+- **A real plugin-library layout:** a new README (banner, badges, feature table, screenshots, requirements, installation, quick start), a `docs/` folder with an index, an FAQ, upgrade notes per release, an **API reference generated from the code**, and the long README sections moved into focused guides (usage, modern navigation, large menus, render hooks, panels/workers/tenants/languages, the demo, testing).
+- **A support matrix (`docs/support.md`): Filament v5 only**, with the supported Filament, PHP, Laravel, Livewire and Octane versions. A test keeps it, `composer.json`, the README and the CI job in step; another keeps the generated API reference current and checks every relative link and image.
+- `LICENSE` (MIT), `CODE_OF_CONDUCT.md`, `.gitattributes` (the Composer dist leaves out the demo, tests, screenshots and CI files), complete `composer.json` metadata (keywords, homepage, support links).
+- The docs no longer use the old "agent" example; code samples use projects, tasks and documents.
+- The repository is **public** from this release.
+
 ### Changed
 - Every read accessor on `NavItem` and `DrilldownNavPlugin` is tagged `@internal` (43 methods): they serve the sidebar view and its Livewire endpoints and may change. `docs/api-stability.md` has the freeze review and the decisions left before 1.0.0-rc1.
 - The **Pinned** list moved to the top of the top level (it was below the menu). Recent stays below.

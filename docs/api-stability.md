@@ -39,11 +39,11 @@ Keep in mind: `resolveRecordUsing()`, `recordTitleUsing()` and `ignoreRecordKeys
 
 Every public method was listed and classified. **Done in this review:** every read accessor is tagged `@internal` (43 methods), so editors warn when an app calls them; nothing was removed or renamed.
 
-**Decisions for the owner before 1.0.0-rc1** (my recommendation in bold):
+**Open decisions to settle before 1.0.0-rc1** (the maintainers' current leaning in bold; item 3 is decided: pinned pages stay in this package):
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| 1 | `pollBadges()` re-renders the whole sidebar, not only badges | keep the name / rename to `poll()` | **rename to `poll()`** now: it is new and unreleased, so renaming costs nothing |
+| 1 | `pollBadges()` re-renders the whole sidebar, not only badges | keep the name / rename to `poll()` | **rename to `poll()`** before 1.0: it is new, and a rename before the freeze costs little |
 | 2 | `searchable()` now has four parameters (`minItems`, `allLevels`, `shortcut`) | keep / split into `searchable()` + `searchShortcut()` | **keep**: named arguments read well and each has a safe default |
 | 3 | Pinned pages (with the new database option) and recent pages | promote to the 1.0 promise / keep experimental | **promote `pinnable()`** (it now has server storage and tests); **keep `recent()` experimental** (browser-only) |
 | 4 | `activeOn()` (more URLs) and `activeWhen()` (any condition) | keep both / keep only `activeWhen()` | **keep both**: `activeOn()` matches by prefix like the item's own URL, which `activeWhen()` can't do cleanly |
@@ -65,7 +65,7 @@ Every public method was listed and classified. **Done in this review:** every re
 | ✅ | Worker reuse verified on real Octane servers (RoadRunner, Swoole, FrankenPHP): one worker sequentially, and four workers under parallel load | done, in CI |
 | ✅ | Multi-panel, tenancy/domains, right-to-left | done (RTL checked in a browser with Arabic; Hebrew, Persian and Urdu share the rules and have strings) |
 | ✅ | Docs: README, how it works, API stability, changelog | done |
-| ⬜ | **Decisions below** (freeze review) taken by the owner | pending |
+| ⬜ | **Open decisions above** (freeze review) settled by the maintainers | pending |
 | ⬜ | Hebrew, Persian and Urdu strings reviewed by a native speaker | pending: machine-written |
 | ⬜ | Public API frozen (this page becomes a promise), then **1.0.0-rc1** | after the two items above |
 | ✅ | Works next to other sidebar plugins | done: [compatibility](compatibility.md) |
@@ -74,4 +74,4 @@ Every public method was listed and classified. **Done in this review:** every re
 | ✅ | Strict Content-Security-Policy: no inline `<style>` or `style=""` | done: a published Filament asset |
 | ✅ | Minimum Filament version tested in CI (`--prefer-lowest`) | done: **5.7** (older versions lack `aria-current` in Filament's own items; 5.5 and below break the top-navigation handling) |
 | ✅ | Filament clusters next to the plugin | done, tested: they appear in the menu and keep their sub-navigation |
-| ⬜ | Published on Packagist | on hold: the repository is private for now |
+| ⬜ | Submitted to Packagist | pending: needs a maintainer's Packagist account (install from GitHub meanwhile) |

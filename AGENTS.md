@@ -60,6 +60,12 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 10 on src/
 - Tests that simulate a worker must do what Octane does between requests: `$app->forgetScopedInstances()` **and** `Facade::clearResolvedInstances()` (see `demo/tests/Feature/PhaseATest.php`). Forgetting the second one makes Filament's facade keep the previous request's manager and produces misleading failures.
 - New user-visible strings go in `resources/lang/*/messages.php` for **all** shipped languages (a test checks the keys match).
 
+## Docs are tested
+
+- `docs/api-reference.md` is **generated**: `php bin/api-reference.php > docs/api-reference.md` after changing any public method (and give each public method a one-line summary in its docblock; `@internal` hides it from the reference).
+- `docs/support.md` holds the support matrix and a hidden `<!-- support: filament=… php=… -->` line. `tests/DocsTest.php` fails if it disagrees with `composer.json`, the README or the `lowest` job name in `.github/workflows/tests.yml`. **Only Filament v5 is supported:** never claim v3/v4.
+- Every relative Markdown link and image must exist, and every page in `docs/` must be listed in `docs/README.md`.
+
 ## Real Octane check
 
 `demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a real one-worker Octane server and verifies per-request isolation with 21 checks (`demo/bin/octane-smoke.php`). Run it after any change to `RequestState`, the plugin's hooks or anything that caches. It needs `DEMO_AUTOLOGIN=true`, which the script sets; that demo-only login route exists only when the variable is set and the app runs in `local`/`testing`. CI runs it for all three servers.

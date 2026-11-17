@@ -1,6 +1,6 @@
 ---
 name: filament-drilldown-nav
-description: Add drill-down sidebar navigation to a Filament v5 panel — one level at a time, Back link, any depth, per-record menus (click an project/site/customer and get that record's own menu), reusing existing Resources and Pages. Use when a Filament panel needs 3+ navigation levels, a menu per record, or a single left sidebar instead of a second sub-navigation.
+description: Add drill-down sidebar navigation to a Filament v5 panel — one level at a time, Back link, any depth, per-record menus (click a project/site/customer and get that record's own menu), reusing existing Resources and Pages. Use when a Filament panel needs 3+ navigation levels, a menu per record, or a single left sidebar instead of a second sub-navigation.
 ---
 
 # Skill: filament-drilldown-nav
@@ -9,7 +9,7 @@ Package: `solutionforest/filament-drilldown-nav` (Filament **v5**, PHP 8.3+). Fo
 
 ## When to use it
 
-- A record has its own area ("click an project → Tasks, Files, Settings") and you want that menu **in the left sidebar**.
+- A record has its own area ("click a project → Tasks, Files, Settings") and you want that menu **in the left sidebar**.
 - Menus nest 3–4 levels deep.
 - You do **not** need it for two levels: native navigation groups, parent items and Clusters are enough.
 
@@ -104,7 +104,7 @@ DrilldownNavPlugin::make()->searchable(minItems: 6)->recent(5)->pinnable()->item
 NavItem::make('Projects')->children(fn () => [...])->limit(5, $allProjectsUrl);   // first 5 + "View all (N)"
 ```
 
-- Search filters only what is on screen; recent/pinned are per browser, panel and user; `limit()` shortens the display only (keep your query small).
+- Search filters what is on screen, or all levels with `searchable(allLevels: true)` (focus it with `/`); recent pages are per browser, pinned pages per browser or, with `pinnable(database: true)`, per user, panel and tenant; `limit()` shortens the display only (keep your query small).
 
 ## Render hooks
 

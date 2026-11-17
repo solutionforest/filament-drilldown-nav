@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Question or troubleshooting
+    url: https://github.com/solutionforest/filament-drilldown-nav/blob/main/docs/faq.md
+    about: Empty menu, missing styles, a record menu that does not appear? Start with the FAQ.
   - name: Security vulnerability
     url: https://github.com/solutionforest/filament-drilldown-nav/security
     about: Please report vulnerabilities privately (see SECURITY.md), not as an issue.

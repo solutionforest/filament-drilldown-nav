@@ -59,6 +59,7 @@ class DrilldownNavPlugin implements Plugin
 
     protected ?Panel $panel = null;
 
+    /** Create the plugin to register on a panel: `->plugin(DrilldownNavPlugin::make()->items(...))`. */
     public static function make(): static
     {
         $plugin = app(static::class);
@@ -70,6 +71,7 @@ class DrilldownNavPlugin implements Plugin
         return $plugin;
     }
 
+    /** The plugin instance registered on the current panel (throws if the panel does not use it). */
     public static function get(): static
     {
         $plugin = filament(static::make()->getId());
