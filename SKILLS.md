@@ -93,7 +93,7 @@ NavItem::make('Team')->icon('heroicon-o-users')->inline()->defaultExpanded()->ch
 DrilldownNavPlugin::make()->childDisplay(ChildDisplay::Inline)->items(...);  // inline by default for the panel
 ```
 
-- `->inline()` / `->drilldown()` per item; inline sections can nest; the section containing the current page is open; state is remembered in the browser.
+- `->inline()` / `->drilldown()` per item; inline sections can nest; the section containing the current page is open; state is remembered in a cookie and rendered on the server; `DrilldownNavPlugin::accordion()` keeps one section open at a time. Record menus: `NavItem::resource(X)->recordPages()` builds one from the resource's record pages, or implement `HasDrilldownRecordMenu` on the resource. `->pollBadges('30s')` or `$this->dispatch('refresh-sidebar')` keep badges current.
 - Collapsed icon-only mode comes with the panel's `->sidebarCollapsibleOnDesktop()`: **give top-level items icons**.
 - Keep headings/dividers out of URL logic: they have no URL by design.
 

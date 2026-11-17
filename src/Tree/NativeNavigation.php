@@ -176,6 +176,12 @@ class NativeNavigation
         return $result;
     }
 
+    /** One Filament navigation item (with its child items) as a drill-down item. */
+    public static function toNavItem(NavigationItem $item): NavItem
+    {
+        return static::convert($item);
+    }
+
     protected static function convert(NavigationItem $item): NavItem
     {
         $nav = NavItem::make($item->getLabel())

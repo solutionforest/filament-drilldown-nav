@@ -33,6 +33,13 @@ class DrilldownNavPlugin implements Plugin
 
     protected bool $pinnable = false;
 
+    protected ?string $pollInterval = null;
+
+    protected bool $accordion = false;
+
+    /** Cookie holding which inline sections the user opened or closed (read on the server). */
+    public const OPEN_STATE_COOKIE = 'fi-drilldown-open';
+
     protected string $panelId = '';
 
     protected ?Panel $panel = null;
@@ -115,6 +122,68 @@ class DrilldownNavPlugin implements Plugin
         $this->pinnable = $pinnable;
 
         return $this;
+    }
+
+    /**
+     * Re-render the sidebar every $interval (e.g. '30s', '2m'), so badges and record titles stay current
+     * without a page load. Livewire pauses polling in background tabs. Null turns it off. For changes you
+     * know about, dispatch Filament's `refresh-sidebar` event instead (e.g. `$this->dispatch('refresh-sidebar')`).
+     */
+    public function pollBadges(?string $interval = '30s'): static
+    {
+        if ($interval !== null && preg_match('/^\d+(ms|s|m)$/', $interval) !== 1) {
+            throw new \InvalidArgumentException("pollBadges() expects an interval like '30s', '2m' or '500ms', got [{$interval}].");
+        }
+
+        $this->pollInterval = $interval;
+
+        return $this;
+    }
+
+    /** Only one inline section open at a time within the same parent (opening one closes its siblings). */
+    public function accordion(bool $accordion = true): static
+    {
+        $this->accordion = $accordion;
+
+        return $this;
+    }
+
+    public function isAccordion(): bool
+    {
+        return $this->accordion;
+    }
+
+    /**
+     * Which inline sections the user opened (1) or closed (0), by section key, from the cookie the
+     * sidebar writes. Read on the server so a closed section is not painted open first.
+     *
+     * @return array<string, bool>
+     */
+    public function getOpenState(): array
+    {
+        $raw = original_request()->cookie(self::OPEN_STATE_COOKIE);
+
+        if (! is_string($raw) || $raw === '' || strlen($raw) > 4096) {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        $state = [];
+
+        if (is_array($decoded)) {
+            foreach ($decoded as $key => $value) {
+                if (is_string($key) && preg_match('/^[a-f0-9]{10}$/', $key) === 1) {
+                    $state[$key] = (bool) $value;
+                }
+            }
+        }
+
+        return $state;
+    }
+
+    public function getPollInterval(): ?string
+    {
+        return $this->pollInterval;
     }
 
     public function isSearchable(): bool
