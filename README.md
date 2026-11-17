@@ -262,6 +262,12 @@ $panel
 
 Every hook is scoped to the id of the panel being rendered, so a hook registered for `admin` never shows in another panel. A closure may declare `array $data`, which holds `plugin`, `panel`, `depth` (0 = top level) and `title`.
 
+Hook output is wrapped in `<div class="fi-drilldown-hook" data-hook="…">`. In a panel with `->sidebarCollapsibleOnDesktop()` it shows only while the sidebar is open, so free text never widens the icon rail.
+
+## Works with other plugins
+
+Checked next to Hover Sidebar, Sidebar Resize, Refresh Sidebar, Mobile Bottom Nav and Collapsible Sub-Nav: all work. Hover Sidebar and Sidebar Resize conflict with **each other** (both set the width). Details, versions and screenshots: [docs/compatibility.md](docs/compatibility.md).
+
 ## Multi-panel, Octane, tenants, languages
 
 - **Several panels:** register the plugin on any panel, each with its own tree. A panel without it keeps Filament's own sidebar. (Demo: `admin`, `portal`, `plain`.)
@@ -353,6 +359,7 @@ cd demo && php artisan test     # feature tests: real pages rendered through the
 
 - [How it works](docs/how-it-works.md) — problem, request flow, record menus, native navigation, class overview.
 - [This plugin or Filament's own navigation?](docs/vs-filament-native.md) — a decision guide.
+- [Works with other plugins](docs/compatibility.md) — what was checked, versions, and how to repeat it.
 - [API stability](docs/api-stability.md) — what is public, what may change, and what 1.0 needs.
 - [Changelog](CHANGELOG.md).
 - [AGENTS.md](AGENTS.md) — for people and AI agents changing this repo.
