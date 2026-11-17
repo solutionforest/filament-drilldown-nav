@@ -4,6 +4,8 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-17
+
 ### Added
 - **Menu search:** `DrilldownNavPlugin::searchable(minItems: …)` adds a filter box above the menu. It filters what is already on screen (the current level and inline sections), keeps a section visible when one of its children matches, hides headings while searching, and shows a "no matches" note. `Esc` clears it.
 - **Recent and pinned pages:** `->recent($limit)` lists the last pages visited at the top level; `->pinnable()` adds "Pin this page" and a "Pinned" list. Stored per browser, panel and user.
