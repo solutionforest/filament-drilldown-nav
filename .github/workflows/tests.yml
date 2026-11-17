@@ -37,3 +37,23 @@ jobs:
       - name: Feature tests
         working-directory: demo
         run: php artisan test
+
+  octane:
+    name: Real Octane worker (${{ matrix.server }})
+    # Self-hosted runner: never run code from fork pull requests.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [roadrunner, swoole, frankenphp]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install demo dependencies
+        working-directory: demo
+        run: composer install --no-interaction --prefer-dist
+      - name: Smoke test against a real one-worker Octane server
+        working-directory: demo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bin/octane-smoke.sh ${{ matrix.server }}

@@ -50,6 +50,10 @@ vendor/bin/phpstan analyse --memory-limit=1G      # PHPStan level 9 on src/
 - Tests that simulate a worker must do what Octane does between requests: `$app->forgetScopedInstances()` **and** `Facade::clearResolvedInstances()` (see `demo/tests/Feature/PhaseATest.php`). Forgetting the second one makes Filament's facade keep the previous request's manager and produces misleading failures.
 - New user-visible strings go in `resources/lang/*/messages.php` for **all** shipped languages (a test checks the keys match).
 
+## Real Octane check
+
+`demo/bin/octane-smoke.sh <roadrunner|swoole|frankenphp>` starts a real one-worker Octane server and verifies per-request isolation with 21 checks (`demo/bin/octane-smoke.php`). Run it after any change to `RequestState`, the plugin's hooks or anything that caches. It needs `DEMO_AUTOLOGIN=true`, which the script sets; that demo-only login route exists only when the variable is set and the app runs in `local`/`testing`. CI runs it for all three servers.
+
 ## Views (Blade) rules
 
 - **Never put `@if`/`@foreach` inside a Blade component tag** (`<x-filament::icon ... @if ... />`): Blade swallows the whole tag silently. Wrap the component in a plain element that carries the directive/`x-show` instead (this once made every chevron disappear while all tests passed).
