@@ -4,6 +4,9 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+- More space between the Back link and the level title (0.25rem to 0.75rem), and a little more below the header.
+
 ### Changed
 - CI runs on GitHub-hosted runners (`ubuntu-latest`), including pull requests from forks; the workflow token is read-only.
 
