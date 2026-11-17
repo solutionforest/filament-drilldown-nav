@@ -26,7 +26,8 @@ class ActivePathResolver
      * and matching continues into it exactly like anywhere else.
      *
      * An item matches by prefix, except when its URL is the panel root or the same URL as
-     * one of its ancestors (e.g. a record's "Overview"): those match exactly only.
+     * one of its ancestors (e.g. a record's "Overview"): those match exactly only. Extra URLs
+     * from NavItem::activeOn() match the same way, as if they were the item's own.
      *
      * @param  array<int, NavItem>  $tree
      * @param  string|null  $rootPath  panel root (e.g. "/admin")
@@ -56,16 +57,24 @@ class ActivePathResolver
                 }
 
                 $u = self::normalise($url);
-                $exactOnly = $u === '/' || $u === $rootPath || in_array($u, $ancestorUrls, true);
-                $exact = $path === $u;
+                $matchLen = -1;
 
-                if (! $exact && ($exactOnly || ! str_starts_with($path, $u.'/'))) {
+                // Its own URL first, then any extra URLs from activeOn(); the longest match counts.
+                foreach ([$u, ...array_map(self::normalise(...), $item->getActiveUrls())] as $candidate) {
+                    $exactOnly = $candidate === '/' || $candidate === $rootPath || in_array($candidate, $ancestorUrls, true);
+
+                    if ($path === $candidate || (! $exactOnly && str_starts_with($path, $candidate.'/'))) {
+                        $matchLen = max($matchLen, strlen($candidate));
+                    }
+                }
+
+                if ($matchLen < 0) {
                     continue;
                 }
 
-                if (strlen($u) >= $bestLen) {
+                if ($matchLen >= $bestLen) {
                     $best = $current;
-                    $bestLen = strlen($u);
+                    $bestLen = $matchLen;
                 }
 
                 $urls = [...$ancestorUrls, $u];

@@ -4,6 +4,10 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+- **Own header for a level:** `NavItem::recordHeader(fn ($record) => view(...))` for a record's menu and `->header(...)` for any item that opens a level replace the default Back link and title (a view renders as HTML, a string as text; the header gets the focus the title would). Demo: one task's menu.
+- **Extra active URLs:** `NavItem::activeOn([...])` keeps an item current on pages under other URLs (matched like its own: by prefix, exact only for the panel root and ancestor URLs), e.g. a list at `/agents/5/sources` whose records open at `/agents/5/knowledge/{id}`.
+
 ## [0.3.0] - 2026-11-17
 
 ### Added

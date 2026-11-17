@@ -54,6 +54,14 @@ class NavItem
     /** @var array<int, string>|Closure */
     protected array|Closure $ignoredRecordKeys = ['create'];
 
+    /** @var array<int, string>|(Closure(): array<int, string>) */
+    protected array|Closure $activeUrls = [];
+
+    /** @var Htmlable|string|(Closure(): (Htmlable|string|null))|null */
+    protected Htmlable|string|Closure|null $header = null;
+
+    protected ?Closure $recordHeader = null;
+
     final public function __construct(protected string|Htmlable $label) {}
 
     public static function make(string|Htmlable $label): static
@@ -184,6 +192,46 @@ class NavItem
         return $this;
     }
 
+    /**
+     * More URLs where this item counts as the current page, matched like its own URL (by prefix).
+     * For pages that belong to the item but live elsewhere, e.g. a list at /agents/1/sources whose
+     * records open at /agents/1/knowledge/{id}. Only items with a URL use them.
+     *
+     * @param  array<int, string>|Closure(): array<int, string>  $urls
+     */
+    public function activeOn(array|Closure $urls): static
+    {
+        $this->activeUrls = $urls;
+
+        return $this;
+    }
+
+    /**
+     * Replaces the default header (Back link and title) above the level this item opens, e.g. with
+     * a card and a switcher. Rendered as given: an Htmlable (a view) as HTML, a string as escaped text.
+     * The header then owns the way back, so include a link to the parent level yourself.
+     *
+     * @param  Htmlable|string|(Closure(): (Htmlable|string|null))|null  $header
+     */
+    public function header(Htmlable|string|Closure|null $header): static
+    {
+        $this->header = $header;
+
+        return $this;
+    }
+
+    /**
+     * Like header(), for the level of ONE record of this item (see record()): the closure gets the record.
+     *
+     * @param  Closure(never): (Htmlable|string|null)  $header
+     */
+    public function recordHeader(Closure $header): static
+    {
+        $this->recordHeader = $header;
+
+        return $this;
+    }
+
     /** Draw a separator line above this item. */
     public function divider(bool $divider = true): static
     {
@@ -261,6 +309,26 @@ class NavItem
         $this->recordTitle = $title;
 
         return $this;
+    }
+
+    /**
+     * Extra URLs from activeOn(), evaluated at most once per request.
+     *
+     * @return array<int, string>
+     */
+    public function getActiveUrls(): array
+    {
+        return RequestState::current()->remember($this, 'active-urls', fn (): array => $this->activeUrls instanceof Closure ? ($this->activeUrls)() : $this->activeUrls);
+    }
+
+    /** The custom header of this item's level (null = the default Back link and title). */
+    public function getHeader(): Htmlable|string|null
+    {
+        return RequestState::current()->remember($this, 'header', function (): Htmlable|string|null {
+            $header = $this->header instanceof Closure ? ($this->header)() : $this->header;
+
+            return $header === '' ? null : $header;
+        });
     }
 
     public function getLabel(): string|Htmlable
@@ -464,8 +532,11 @@ class NavItem
             return null;
         }
 
+        $recordHeader = $this->recordHeader;
+
         return static::make($this->recordTitle ? ($this->recordTitle)($record) : (string) $record)
             ->url($url)
-            ->children(fn (): array => $menu($record));
+            ->children(fn (): array => $menu($record))
+            ->header($recordHeader === null ? null : fn (): Htmlable|string|null => $recordHeader($record));
     }
 }

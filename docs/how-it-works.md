@@ -95,6 +95,8 @@ sequenceDiagram
 
 A failing lookup (for example a non-numeric key on a PostgreSQL integer column) is treated as "no such record", so such URLs fall back to the top level instead of erroring.
 
+The record node takes its header from `recordHeader()`, called with the record when that level is rendered; without one, the level shows Back and the record title. Separately, `activeOn()` gives any item extra URLs: the resolver tries the item's own URL and these the same way (prefix, or exact only for the panel root and ancestor URLs), and the longest match counts. So a list at `/agents/5/sources` can stay current on `/agents/5/knowledge/9/edit`.
+
 ## 4. Reusing Filament's navigation
 
 Everything you already declare the Filament way keeps working: `$navigationGroup`, `$navigationParentItem`, `$navigationSort`, `$navigationBadge`, `shouldRegisterNavigation()`, `canAccess()`, `NavigationItem::make()`.
@@ -168,6 +170,7 @@ classDiagram
         +url() icon() badge() visible()
         +children(array|Closure)
         +record(Closure)
+        +header() recordHeader() activeOn()
         +getLinkUrl() string
     }
     class ActivePathResolver {
@@ -187,12 +190,12 @@ classDiagram
 | File | Responsibility |
 |---|---|
 | `src/DrilldownNavPlugin.php` | Registers the plugin: empties Filament's default list (keeps the sidebar shell) and renders ours at `SIDEBAR_NAV_START`. |
-| `src/Tree/NavItem.php` | The menu item: label, icon, URL, badge, visibility, children (drilldown or inline), headings, dividers, per-record menu. |
+| `src/Tree/NavItem.php` | The menu item: label, icon, URL, extra active URLs, badge, visibility, children (drilldown or inline), headings, dividers, per-record menu, custom level header. |
 | `src/ChildDisplay.php` | Enum: `Drilldown` or `Inline` default for a panel. |
 | `src/Tree/ActivePathResolver.php` | Pure logic: request path → active path → level to render. No Filament or HTTP dependencies, so it is easy to test. |
 | `src/RequestState.php` | Per-request memo (scoped binding): item tree, children, record nodes, native capture. |
 | `src/Tree/NativeNavigation.php` | Adapter from Filament's navigation to `NavItem`s. |
-| `resources/views/sidebar.blade.php` | Renders Back, title and items (reusing `x-filament-panels::sidebar.item`), plus the slide animation. |
+| `resources/views/sidebar.blade.php` | Renders Back and title (or a custom header), and items (reusing `x-filament-panels::sidebar.item`), plus the slide animation. |
 
 ## 8. Limits
 

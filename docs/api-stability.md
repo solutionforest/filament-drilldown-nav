@@ -11,7 +11,7 @@ These are intended to stay as they are; before 1.0, a change to any of them is a
 | Plugin | `DrilldownNavPlugin::make()`, `->items()`, `->childDisplay()`, `->searchable()`, `->recent()`, `->pinnable()` |
 | Display mode | `ChildDisplay::Drilldown`, `ChildDisplay::Inline` |
 | Building items | `NavItem::make()`, `::page()`, `::resource()`, `::heading()`, `::fromFilamentNavigation()` |
-| Item options | `url()`, `icon()`, `activeIcon()`, `badge()`, `visible()`, `children()`, `inline()`, `drilldown()`, `defaultExpanded()`, `divider()`, `limit()`, `record()`, `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()` |
+| Item options | `url()`, `icon()`, `activeIcon()`, `badge()`, `visible()`, `children()`, `inline()`, `drilldown()`, `defaultExpanded()`, `divider()`, `limit()`, `activeOn()`, `header()`, `record()`, `recordHeader()`, `resolveRecordUsing()`, `recordTitleUsing()`, `ignoreRecordKeys()` |
 | Translations | the keys in `resources/lang/*/messages.php` (publish tag `filament-drilldown-nav-translations`) |
 | Behaviour | the level is computed from the request URL; closures run once per request; only items returned from `items()` are shown |
 

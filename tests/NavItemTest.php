@@ -319,3 +319,32 @@ it('exposes the plugin options for search, recent and pinned items', function ()
 
     expect($plugin->recent(-3)->getRecentLimit())->toBe(0);
 });
+
+it('has no custom header unless one is set, and evaluates a header closure once per request', function () {
+    $calls = 0;
+    $item = NavItem::make('Settings')->header(function () use (&$calls): HtmlString {
+        $calls++;
+
+        return new HtmlString('<div class="card">Settings</div>');
+    });
+
+    expect(NavItem::make('Plain')->getHeader())->toBeNull()
+        ->and(NavItem::make('Empty')->header('')->getHeader())->toBeNull()
+        ->and(NavItem::make('Text')->header('Text header')->getHeader())->toBe('Text header')
+        ->and($item->getHeader()->toHtml())->toBe('<div class="card">Settings</div>')
+        ->and($item->getHeader())->toBeInstanceOf(HtmlString::class)
+        ->and($calls)->toBe(1);
+});
+
+it('gives the record node a header built from its record', function () {
+    $item = NavItem::make('Agents')->url('/admin/agents')
+        ->resolveRecordUsing(fn (string $key): string => 'Agent '.$key)
+        ->recordHeader(fn (string $agent): HtmlString => new HtmlString("<b>{$agent}</b>"))
+        ->record(fn () => [NavItem::make('Playground')->url('/admin/agents/5')]);
+
+    $node = $item->getRecordNode('/admin/agents/5/instructions');
+
+    expect($node?->getHeader()?->toHtml())->toBe('<b>Agent 5</b>')
+        ->and($item->getHeader())->toBeNull()
+        ->and(NavItem::make('Projects')->url('/admin/projects')->record(fn () => [])->getRecordNode('/admin/projects/1')?->getHeader())->toBeNull();
+});

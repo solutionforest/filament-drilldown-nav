@@ -122,7 +122,10 @@
         </div>
     @endif
 
-    @if ($level['parent'])
+    @if ($level['parent'] && ($customHeader = $level['parent']->getHeader()) !== null)
+        {{-- A header set with header() / recordHeader() replaces Back and the title; it gets the focus a title would. --}}
+        <div class="fi-drilldown-custom-header" tabindex="-1" x-ref="title">{{ $customHeader }}</div>
+    @elseif ($level['parent'])
         <div class="fi-drilldown-header">
             <a
                 href="{{ $level['back'] ?? $homeUrl }}"
@@ -210,6 +213,7 @@
     .dark .fi-drilldown-header { border-bottom-color: rgb(255 255 255 / 0.1); }
     .fi-drilldown-back { display: flex; align-items: center; gap: 0.25rem; margin-inline-start: -0.25rem; font-size: 0.875rem; font-weight: 500; color: var(--gray-500); text-decoration: none; }
     .fi-drilldown-back:hover { color: var(--gray-950); }
+    .fi-drilldown-custom-header { outline: none; }
     .fi-drilldown-title { margin-top: 0.25rem; font-size: 1rem; font-weight: 600; color: var(--gray-950); outline: none; }
     .dark .fi-drilldown-back { color: var(--gray-400); }
     .dark .fi-drilldown-back:hover, .dark .fi-drilldown-title { color: #fff; }

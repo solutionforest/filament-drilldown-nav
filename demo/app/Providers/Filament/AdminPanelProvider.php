@@ -88,6 +88,11 @@ class AdminPanelProvider extends PanelProvider
                             ->url(ProjectResource::getUrl('view', ['record' => $project])),
                         NavItem::resource(TaskResource::class, ['project' => $project])
                             ->badge(fn (): string => (string) $project->tasks()->where('status', '!=', 'done')->count())
+                            // A custom header in place of Back + title: back to the task list, the task and its status.
+                            ->recordHeader(fn (Task $task) => view('filament.nav.task-header', [
+                                'task' => $task,
+                                'backUrl' => TaskResource::getIndexUrl(['project' => $project]),
+                            ]))
                             ->record(fn (Task $task) => [
                                 NavItem::make('Details')->icon('heroicon-o-document-text')
                                     ->url(TaskResource::getUrl('edit', ['project' => $project, 'record' => $task])),

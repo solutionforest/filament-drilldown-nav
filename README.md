@@ -120,6 +120,31 @@ Record-menu URLs must live under the resource's own URL (`/admin/projects/{recor
 
 For a non-resource item use `->resolveRecordUsing(fn (string $key) => …)` and `->recordTitleUsing(fn ($record) => …)`. Fixed pages below the list URL (like `/projects/import`) are never mistaken for a record: they are excluded automatically for `resource()`, or with `->ignoreRecordKeys(['create', 'import'])`.
 
+#### Your own header for a level
+
+A level normally starts with **Back** and its title. Replace that with your own view, for example a card with the record's status and a switcher, with `->recordHeader()` (for a record's menu) or `->header()` (for any item that opens a level):
+
+```php
+NavItem::resource(TaskResource::class, ['project' => $project])
+    ->recordHeader(fn (Task $task) => view('filament.nav.task-header', [
+        'task' => $task,
+        'backUrl' => TaskResource::getIndexUrl(['project' => $project]),
+    ]))
+    ->record(fn (Task $task) => [ /* ... */ ]);
+```
+
+A view (any `Htmlable`) is rendered as HTML, a string as escaped text, and `null` keeps the default. The header replaces Back too, so include a link back yourself. It receives keyboard focus when you drill in or out, like the default title. In the collapsed sidebar it is shown as you wrote it, so hide what does not fit with `x-show="$store.sidebar.isOpen"`. (Demo: one task's menu.)
+
+#### Pages that live elsewhere
+
+An item is current when the URL starts with its own URL. When some of its pages live under another URL, list those with `->activeOn()`; they match the same way:
+
+```php
+NavItem::make('Knowledge')
+    ->url(AgentResource::getUrl('knowledge', ['record' => $agent]))       // /agents/5/sources
+    ->activeOn([KnowledgeDocumentResource::getIndexUrl(['agent' => $agent])]); // /agents/5/knowledge/{id}, …/create
+```
+
 ### 4. Reuse Filament's own navigation
 
 Anything you already declare the Filament way keeps working (`$navigationGroup`, `$navigationParentItem`, `$navigationSort`, `$navigationBadge`, `shouldRegisterNavigation()`, `canAccess()`, `NavigationItem::make()`):
@@ -225,7 +250,7 @@ DrilldownNavPlugin::make()
 |---|---|
 | **Clients** (staff only) | table → click a client → its own menu: Overview, **Projects** (opens a level listing that client's projects, with a count badge), **Invoices** (a nested resource, badge = unpaid invoices), Contacts |
 | **Projects** | table → click a project → its menu: Overview, **Tasks** (nested resource, badge = open tasks), Time, Files → Documents / Links, Settings |
-| **Tasks** | each task has its own menu (Details, Comments, History): **five levels**: Projects → Project → Tasks → Task → Comments |
+| **Tasks** | each task has its own menu (Details, Comments, History) under a custom header (`recordHeader()`: All tasks, title, status): **five levels**: Projects → Project → Tasks → Task → Comments |
 | **Roles** | `admin`, `manager`, `member`, `client`: menus and pages differ (a client login sees only its own client's projects and never Clients, Time or Settings) |
 | **Reports** | a group imported from native Filament navigation: sort order, group icon, badge, native parent item, permission-gated page |
 | **Workspace** | click-to-expand sections with a heading and divider, nested expand, remembered state |

@@ -67,6 +67,19 @@ NavItem::resource(ProjectResource::class)->record(fn (Project $project) => [
 ```
 For a non-resource item use `->resolveRecordUsing(fn (string $key) => ...)` and `->recordTitleUsing(fn ($record) => ...)`. Fixed pages under the list URL (like `import`) are excluded with `->ignoreRecordKeys(['create', 'import'])` (done automatically for `resource()`).
 
+**Own header for a level** — replaces Back + title (include a way back yourself); a view renders as HTML, a string as text.
+```php
+NavItem::resource(TaskResource::class, ['project' => $project])
+    ->recordHeader(fn (Task $task) => view('nav.task-header', ['task' => $task]))   // a record's menu
+    ->record(fn (Task $task) => [...]);
+NavItem::make('Settings')->header(fn () => view('nav.settings-header'))->children([...]); // any level
+```
+
+**Pages under another URL** — the item is also current there (prefix match, like its own URL).
+```php
+NavItem::make('Knowledge')->url($sourcesUrl)->activeOn([$knowledgeDocumentsUrl]);
+```
+
 **Reuse Filament's own navigation** (`$navigationGroup`, `$navigationParentItem`, `$navigationSort`, badges, `canAccess()`):
 ```php
 ...NavItem::fromFilamentNavigation(fn (NavigationItem $item): bool => $item->getUrl() !== Dashboard::getUrl())

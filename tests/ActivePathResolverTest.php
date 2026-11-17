@@ -263,3 +263,79 @@ it('looks up each record at most once per request', function () {
 
     expect($lookups)->toBe(1);
 });
+
+function agentTree(bool $withActiveOn = true): array
+{
+    $knowledge = NavItem::make('Knowledge')->url('/admin/agents/5/sources');
+
+    if ($withActiveOn) {
+        $knowledge->activeOn(['/admin/agents/5/knowledge']);
+    }
+
+    return [
+        NavItem::make('Agents')->url('/admin/agents')
+            ->resolveRecordUsing(fn (string $key) => $key === '5' ? 'Support bot' : null)
+            ->record(fn (string $agent) => [
+                NavItem::make('Playground')->url('/admin/agents/5'),
+                NavItem::make('Build')->inline()->children([
+                    NavItem::make('Instructions')->url('/admin/agents/5/instructions'),
+                    $knowledge,
+                ]),
+            ]),
+    ];
+}
+
+it('marks an item current on the extra URLs given to activeOn()', function () {
+    foreach (['/admin/agents/5/knowledge/9/edit', '/admin/agents/5/knowledge/create', '/admin/agents/5/sources'] as $path) {
+        [$resolved, $level] = resolveNav(agentTree(), $path);
+
+        expect(labels($resolved['path']))->toBe(['Agents', 'Support bot', 'Build', 'Knowledge'])
+            ->and($level['title'])->toBe('Support bot');
+    }
+
+    // Without activeOn() the record stays open but nothing in its menu is current.
+    [$resolved] = resolveNav(agentTree(withActiveOn: false), '/admin/agents/5/knowledge/9/edit');
+
+    expect(labels($resolved['path']))->toBe(['Agents', 'Support bot']);
+});
+
+it('matches activeOn() URLs like the item\'s own: by prefix, exact only for the root or an ancestor URL', function () {
+    $tree = [
+        NavItem::make('Projects')->url('/admin/projects')->children([
+            NavItem::make('Overview')->url('/admin/projects/overview')->activeOn(['/admin/projects', '/admin', '/admin/reports']),
+            NavItem::make('Reports detail')->url('/admin/reports/detail'),
+        ]),
+    ];
+
+    // An extra URL equal to an ancestor's (or the panel root) matches exactly only.
+    [$resolved] = resolveNav($tree, '/admin/projects/anything');
+    expect(labels($resolved['path']))->toBe(['Projects']);
+
+    // ...and on that exact URL the deeper item wins, as for a record's "Overview".
+    [$resolved] = resolveNav($tree, '/admin/projects');
+    expect(labels($resolved['path']))->toBe(['Projects', 'Overview']);
+
+    // The longest matching URL wins, whether it is an item's own URL or an extra one.
+    [$resolved] = resolveNav($tree, '/admin/projects/overview/x');
+    expect(labels($resolved['path']))->toBe(['Projects', 'Overview']);
+
+    [$resolved] = resolveNav($tree, '/admin/reports/detail/1');
+    expect($resolved['path'])->toBe([]); // its parent's URL does not match, so the walk never reaches it
+});
+
+it('evaluates an activeOn() closure at most once per request', function () {
+    $calls = 0;
+    $tree = [
+        NavItem::make('Knowledge')->url('/admin/sources')->activeOn(function () use (&$calls): array {
+            $calls++;
+
+            return ['/admin/knowledge'];
+        }),
+    ];
+
+    $r = new ActivePathResolver;
+    $r->resolve($tree, '/admin/knowledge/1', '/admin');
+    $r->resolve($tree, '/admin/knowledge/2', '/admin');
+
+    expect($calls)->toBe(1);
+});

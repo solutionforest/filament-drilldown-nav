@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Projects\Tasks\TaskResource;
 use App\Models\Client;
 use App\Models\Document;
 use App\Models\Invoice;
@@ -101,11 +102,15 @@ class RealWorldDemoTest extends TestCase
         $level2 = $this->sidebar($this->as('demo@example.com', "/admin/projects/{$project->id}/tasks"));
         $this->assertMatchesRegularExpression('/^Back '.preg_quote($project->name, '/').' Overview Tasks '.$open.' Time Files Settings$/', $level2);
 
-        // level 4: one task, with its own menu
+        // level 4: one task, with its own menu under a custom header (recordHeader) instead of Back + title
+        $status = (string) str($task->status)->headline();
+
         foreach (['edit' => 'Details', 'comments' => 'Comments', 'history' => 'History'] as $page => $label) {
             $response = $this->as('demo@example.com', "/admin/projects/{$project->id}/tasks/{$task->id}/{$page}");
             $response->assertOk();
-            $this->assertSame('Back '.$task->title.' Details Comments History', $this->sidebar($response), $page);
+            $this->assertSame('All tasks '.$task->title.' '.$status.' Details Comments History', $this->sidebar($response), $page);
+            $response->assertSee('class="fi-drilldown-custom-header" tabindex="-1" x-ref="title"', false);
+            $response->assertSee('href="'.e(TaskResource::getIndexUrl(['project' => $project])).'"', false);
             $this->assertMatchesRegularExpression('#aria-current="page"[^>]*>.*?'.$label.'#s', (string) $response->getContent());
         }
     }
