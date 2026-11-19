@@ -4,6 +4,9 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+- README: an animated preview of the drill-down sidebar (`docs/images/tutorial-preview.gif`), so the first thing a visitor sees is the menu changing level.
+
 ## [0.6.2] - 2026-11-17
 
 ### Changed

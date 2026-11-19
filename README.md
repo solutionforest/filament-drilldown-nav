@@ -32,6 +32,11 @@
   <a href="CHANGELOG.md">📝 Changelog</a>
 </p>
 
+<p align="center">
+  <img src="docs/images/tutorial-preview.gif" alt="The drill-down sidebar in action: main menu, a project's menu, Files, search across levels, mobile drawer" width="100%">
+</p>
+<p align="center"><sub>One level at a time — click a project and the sidebar becomes its menu.</sub></p>
+
 ---
 
 ## ✨ Features
