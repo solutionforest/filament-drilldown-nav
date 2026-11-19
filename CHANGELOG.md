@@ -6,6 +6,8 @@ All notable changes to this package. The format follows [Keep a Changelog](https
 
 ### Changed
 - README: an animated preview of the drill-down sidebar (`docs/images/tutorial-preview.gif`), so the first thing a visitor sees is the menu changing level.
+- Refresh the README cover and add a portrait sidebar tutorial, social share image, and Open Graph image.
+- Remove the duplicate demo sidebar title and tighten the gap below the level header.
 
 ## [0.6.2] - 2026-11-17
 

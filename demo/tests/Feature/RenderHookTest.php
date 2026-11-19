@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use SolutionForest\DrilldownNav\DrilldownNavHook;
 use Tests\TestCase;
@@ -29,17 +30,31 @@ class RenderHookTest extends TestCase
 
     public function test_hooks_receive_the_depth_and_title_of_the_level(): void
     {
+        $this->registerHeaderHook();
         $project = Project::create(['name' => 'Alpha']);
 
         $html = $this->html("/admin/projects/{$project->id}");
 
         $this->assertStringContainsString('data-demo-hook="nav-end" data-depth="2"', $html); // Projects > Alpha
-        $this->assertStringContainsString('You are inside: Alpha', $html);
+        $this->assertMatchesRegularExpression(
+            '#<div class="fi-drilldown-hook" data-hook="filament-drilldown-nav::header.after" x-show="\$store.sidebar.isOpen">\s*<p data-hook-test>Alpha</p>#',
+            $html,
+        );
     }
 
     public function test_header_hooks_only_render_on_levels_that_have_a_header(): void
     {
-        $this->assertStringNotContainsString('data-demo-hook="header-after"', $this->html('/admin')); // top level: no header
+        $this->registerHeaderHook();
+
+        $this->assertStringNotContainsString('data-hook-test', $this->html('/admin')); // top level: no header
+    }
+
+    private function registerHeaderHook(): void
+    {
+        Filament::getPanel('admin')->renderHook(
+            DrilldownNavHook::HEADER_AFTER,
+            fn (array $data): string => '<p data-hook-test>'.e($data['title']).'</p>',
+        );
     }
 
     public function test_hooks_are_scoped_to_their_panel(): void

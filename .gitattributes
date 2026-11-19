@@ -5,6 +5,7 @@
 /bin                export-ignore
 /demo               export-ignore
 /tests              export-ignore
+/docs/media         export-ignore
 /docs/screenshots   export-ignore
 /AGENTS.md          export-ignore
 /SKILLS.md          export-ignore

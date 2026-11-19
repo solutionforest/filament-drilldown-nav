@@ -54,6 +54,7 @@ class DrilldownNavTest extends TestCase
         foreach (['', '/tasks'] as $suffix) {
             $this->get_("/admin/projects/{$project->id}{$suffix}")->assertOk()
                 ->assertSeeInOrder(['fi-drilldown-title', 'Website redesign', 'Overview', 'Tasks', 'Files', 'Settings'], false)
+                ->assertDontSee('You are inside: Website redesign')
                 ->assertSee('href="'.url('/admin/projects').'"', false) // Back to the list
                 ->assertDontSee('Docs');
         }

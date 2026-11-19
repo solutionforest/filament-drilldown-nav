@@ -2,6 +2,8 @@
 
 A realistic agency client portal that exercises every feature.
 
+[Portrait tutorial](media/filament-drilldown-nav-social-tutorial.mp4) · [Social share image](media/filament-drilldown-nav-social-share.png) · [SEO and Open Graph image](media/filament-drilldown-nav-seo-og.png) · [Cover image](images/banner.png)
+
 `demo/` is a Laravel 13 + Filament v5 app wired to the package via a path repository. It is a realistic back office, not a toy: about **3,000 rows** (12 clients, ~56 projects, ~760 tasks, ~225 documents, ~146 invoices, ~1,330 time entries) and **four roles**.
 
 | Area | What it shows |

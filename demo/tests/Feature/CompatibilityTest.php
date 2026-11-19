@@ -18,11 +18,7 @@ class CompatibilityTest extends TestCase
         $html = (string) $this->actingAs(User::factory()->create(['email' => 'demo@example.com']))
             ->get("/admin/projects/{$project->id}")->getContent();
 
-        // the admin panel collapses to icons: free text from hooks must not widen the icon rail
-        $this->assertMatchesRegularExpression(
-            '#<div class="fi-drilldown-hook" data-hook="filament-drilldown-nav::header.after" x-show="\$store.sidebar.isOpen">\s*<p data-demo-hook="header-after"#',
-            $html,
-        );
+        // The admin panel collapses to icons: hook content must not widen the icon rail.
         $this->assertMatchesRegularExpression('#<div class="fi-drilldown-hook" data-hook="filament-drilldown-nav::nav.end" x-show="\$store.sidebar.isOpen">#', $html);
     }
 
