@@ -61,10 +61,6 @@ class AdminPanelProvider extends PanelProvider
                 '<div data-demo-hook="nav-end" data-depth="{{ $depth }}" class="fi-drilldown-hook-help"><a href="https://filamentphp.com/docs/5.x/advanced/render-hooks" target="_blank" rel="noopener">Help</a></div>',
                 ['depth' => $data['depth']],
             ))
-            ->renderHook(DrilldownNavHook::HEADER_AFTER, fn (array $data): string => Blade::render(
-                '<p data-demo-hook="header-after" class="fi-drilldown-hook-note">{{ $title }}</p>',
-                ['title' => 'You are inside: '.$data['title']],
-            ))
             ->plugin(DrilldownNavPlugin::make()
                 ->searchable(minItems: 6, allLevels: true)   // filter box once a level lists 6+ items; also finds pages on other levels; '/' focuses it
                 ->recent(5)                 // "Recent" pages at the top level

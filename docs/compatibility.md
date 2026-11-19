@@ -19,7 +19,7 @@ None of these plugins is a dependency of this package or of the demo.
 
 ## Bug found and fixed while testing
 
-Content added through this plugin's [render hooks](../README.md) (for example the demo's "You are inside: …" line) was not hidden in the collapsed (icon-only) sidebar. Free text then stretched the icon rail to about 250 px, with or without Hover Sidebar. Hook content is now wrapped in `.fi-drilldown-hook` and, in a panel with `->sidebarCollapsibleOnDesktop()`, shown only while the sidebar is open.
+Content added through this plugin's [render hooks](../README.md) used to remain visible in the collapsed (icon-only) sidebar. Free text then stretched the icon rail to about 250 px, with or without Hover Sidebar. Hook content is now wrapped in `.fi-drilldown-hook` and, in a panel with `->sidebarCollapsibleOnDesktop()`, shown only while the sidebar is open.
 
 ## Not checked
 
